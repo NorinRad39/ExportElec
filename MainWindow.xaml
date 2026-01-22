@@ -6,44 +6,40 @@
         xmlns:local="clr-namespace:ExportElec"
         mc:Ignorable="d"
         Title="Export Electrode STEP" 
-        Height="336" Width="245" 
+        Height="500" Width="400" 
         ResizeMode="CanMinimize"
-        MinWidth="270" MaxWidth="270" MinHeight="336" MaxHeight="336">
-    <Grid Margin="10">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-        <StackPanel Grid.Column="0" VerticalAlignment="Top" HorizontalAlignment="Center">
+        MinWidth="400" MaxWidth="400" MinHeight="500" MaxHeight="500">
+    <Grid Margin="15">
+        <StackPanel>
             <Button Content="Quitter"
                     Click="Quit_Click"
-                    Width="72" Margin="0,0,0,10" HorizontalAlignment="Left"/>
+                    Width="72" 
+                    Margin="0,0,0,10" 
+                    HorizontalAlignment="Left"/>
+            
             <TextBox x:Name="DocumentNameText"
                      Text="Aucun document sélectionné"
                      IsReadOnly="True"
-                     Margin="0,0,0,10"
-                     MinWidth="200" />
+                     TextWrapping="Wrap"
+                     Margin="0,0,0,10" />
+            
             <ListBox x:Name="ElectrodeList"
                      Margin="0,0,0,10"
-                     MinWidth="200"
-                     Height="180">
+                     Height="300">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Grid>
-                            <CheckBox Content="{Binding Name}" 
-                      IsChecked="{Binding IsChecked, Mode=TwoWay}" />
-                        </Grid>
+                        <CheckBox Content="{Binding Name}" 
+                                  IsChecked="{Binding IsChecked, Mode=TwoWay}" />
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
+            
             <Button Content="Sélectionner le document TopSolid 7"
                     Click="SelectFile_Click"
-                    Margin="0,0,0,10"
-                    Width="250"/>
+                    Margin="0,0,0,10"/>
+            
             <Button Content="Exporter en STEP"
-                    Click="ExportStep_Click"
-                    Width="250"/>
-            <Label Content="Label"/>
+                    Click="ExportStep_Click"/>
         </StackPanel>
     </Grid>
 </Window>
