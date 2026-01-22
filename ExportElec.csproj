@@ -26,6 +26,8 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+    <PreferNativeArm64>false</PreferNativeArm64>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -69,6 +71,10 @@
     </Reference>
     <Reference Include="TopSolid.Kernel.Automating, Version=7.19.400.146, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\TopSolid.Kernel.Automating.7.19.400.146\lib\net472\TopSolid.Kernel.Automating.dll</HintPath>
+    </Reference>
+    <Reference Include="TopSolid.Kernel.SX.NetStandard, Version=7.19.400.140, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files\TOPSOLID\TopSolid 7.19\bin\TopSolid.Kernel.SX.NetStandard.dll</HintPath>
     </Reference>
     <Reference Include="TopSolid.Pdm.Explorer.Automating, Version=7.19.400.146, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\TopSolid.Pdm.Explorer.Automating.7.19.400.146\lib\net472\TopSolid.Pdm.Explorer.Automating.dll</HintPath>
