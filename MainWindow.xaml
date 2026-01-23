@@ -10,22 +10,42 @@
         ResizeMode="CanMinimize"
         MinWidth="400" MaxWidth="400" MinHeight="500" MaxHeight="500">
     <Grid Margin="15">
-        <StackPanel>
+        <StackPanel RenderTransformOrigin="0.5,0.5" Margin="5,5,5,5">
+            <StackPanel.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform/>
+                    <SkewTransform AngleX="0.559"/>
+                    <RotateTransform/>
+                    <TranslateTransform X="2.216"/>
+                </TransformGroup>
+            </StackPanel.RenderTransform>
             <Button Content="Quitter"
                     Click="Quit_Click"
                     Width="72" 
-                    Margin="0,0,0,10" 
+                    Margin="5,10,-3,10" 
                     HorizontalAlignment="Left"/>
-            
+
             <TextBox x:Name="DocumentNameText"
                      Text="Aucun document sélectionné"
-                     IsReadOnly="True"
-                     TextWrapping="Wrap"
-                     Margin="0,0,0,10" />
-            
+                     IsReadOnly="True" Margin="5,0,5,0" TextWrapping="Wrap" >
+                <TextBox.BorderBrush>
+                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                        <GradientStop Color="Black"/>
+                        <GradientStop Color="White" Offset="1"/>
+                    </LinearGradientBrush>
+                </TextBox.BorderBrush>
+            </TextBox>
+
             <ListBox x:Name="ElectrodeList"
-                     Margin="0,0,0,10"
-                     Height="300">
+                     Margin="5,5,5,5" RenderTransformOrigin="0.5,0.5" Height="320">
+                <ListBox.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform/>
+                        <SkewTransform AngleX="0.261"/>
+                        <RotateTransform/>
+                        <TranslateTransform X="-0.662"/>
+                    </TransformGroup>
+                </ListBox.RenderTransform>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <CheckBox Content="{Binding Name}" 
@@ -33,11 +53,11 @@
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-            
+
             <Button Content="Sélectionner le document TopSolid 7"
                     Click="SelectFile_Click"
                     Margin="0,0,0,10"/>
-            
+
             <Button Content="Exporter en STEP"
                     Click="ExportStep_Click"/>
         </StackPanel>
