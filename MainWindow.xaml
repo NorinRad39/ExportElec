@@ -1,45 +1,48 @@
 ﻿<Window x:Class="ExportElec.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ExportElec"
-        mc:Ignorable="d"
         Title="Export Electrode STEP" 
-        Height="500" Width="400" 
+        Height="545" Width="400" 
         ResizeMode="CanMinimize"
-        MinWidth="400" MaxWidth="400" MinHeight="500" MaxHeight="500">
-    <Grid Margin="15">
-        <StackPanel>
-            <Button Content="Quitter"
-                    Click="Quit_Click"
-                    Width="72" 
-                    Margin="0,0,0,10" 
-                    HorizontalAlignment="Left"/>
-            
-            <TextBox x:Name="DocumentNameText"
-                     Text="Aucun document sélectionné"
-                     IsReadOnly="True"
-                     TextWrapping="Wrap"
-                     Margin="0,0,0,10" />
-            
-            <ListBox x:Name="ElectrodeList"
-                     Margin="0,0,0,10"
-                     Height="300">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <CheckBox Content="{Binding Name}" 
-                                  IsChecked="{Binding IsChecked, Mode=TwoWay}" />
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-            
-            <Button Content="Sélectionner le document TopSolid 7"
-                    Click="SelectFile_Click"
-                    Margin="0,0,0,10"/>
-            
-            <Button Content="Exporter en STEP"
-                    Click="ExportStep_Click"/>
-        </StackPanel>
+        MinWidth="400" MinHeight="54">
+    <Grid Width="370" Height="499">
+        <Button x:Name="quitter" Content="Quitter"
+                Click="Quit_Click"
+                Width="72" 
+                HorizontalAlignment="Left" Margin="5,5,5,474"/>
+        <TextBox x:Name="DocumentNameText"
+                Text="Aucun document sélectionné"
+                IsReadOnly="True"
+                TextWrapping="Wrap"
+                     Margin="5,31,5,446"  />
+        <ListBox x:Name="ElectrodeList"
+                     Margin="5,58,5,110">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <CheckBox Content="{Binding Name}" 
+                            IsChecked="{Binding IsChecked, Mode=TwoWay}" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <Grid Margin="0,399,0,10">
+            <StackPanel>
+                <Button x:Name="actualiser" Content="Actualiser" Height="25" Width="360" Click="Button_Click"/>
+                <Button x:Name="exporter"
+                    Click="SelectFile_Click" Margin="5,5,5,5" Height="25" Content="Exporter"/>
+                <Grid>
+                    <Button x:Name="parcourir" Content="Parcourir" Margin="5,5,5,5" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Click="parcourir_Click">
+                        <Button.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform ScaleY="1"/>
+                                <SkewTransform/>
+                                <RotateTransform/>
+                                <TranslateTransform/>
+                            </TransformGroup>
+                        </Button.RenderTransform>
+                    </Button>
+                    <TextBox x:Name="chemin" TextWrapping="Wrap" Text="Chemin d'accés dossier" Margin="61,5,0,5" HorizontalAlignment="Left" Width="304"/>
+                </Grid>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>

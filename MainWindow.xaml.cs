@@ -39,10 +39,40 @@ namespace ExportElec
             // Initialisation de currentDoc
             currentDoc = new Document();
             currentDoc.DocId = TSH.Documents.EditedDocument;
-            DocumentNameText.Text = currentDoc.DocNomTxt;
+            
+            if (currentDoc.DocId == null)
+            {
+                DocumentNameText.Text = currentDoc.DocNomTxt;
+            }
+            else
+            {
+                DocumentNameText.Text = "aucun document ouvert";
+            }
+
+
         }
 
         private void Quit_Click(object sender, RoutedEventArgs e)
+        {
+            if (TopSolidHost.IsConnected)
+            {
+                TopSolidHost.Disconnect();
+            }
+            if (TopSolidDesignHost.IsConnected) 
+            { 
+                TopSolidDesignHost.Disconnect(); 
+            }
+            if (TopSolidDraftingHost.IsConnected)
+            {
+                TopSolidDraftingHost.Disconnect();
+            }
+            
+            Application.Current.Shutdown();
+        }
+
+       
+
+        private void Button_Click(object sender, RoutedEventArgs e)
         {
 
         }
@@ -52,7 +82,7 @@ namespace ExportElec
 
         }
 
-        private void ExportStep_Click(object sender, RoutedEventArgs e)
+        private void parcourir_Click(object sender, RoutedEventArgs e)
         {
 
         }
