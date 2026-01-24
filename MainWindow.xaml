@@ -5,18 +5,36 @@
         Height="545" Width="400" 
         ResizeMode="CanMinimize"
         MinWidth="400" MinHeight="54">
+    <Window.Background>
+        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+            <GradientStop Color="#FF5A5A59" Offset="0"/>
+            <GradientStop Color="#F8FBFFFF" Offset="0.5"/>
+        </LinearGradientBrush>
+    </Window.Background>
+    <Window.Foreground>
+        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+            <GradientStop Color="Black"/>
+            <GradientStop Color="White" Offset="1"/>
+        </LinearGradientBrush>
+    </Window.Foreground>
     <Grid Width="370" Height="499">
         <Button x:Name="quitter" Content="Quitter"
                 Click="Quit_Click"
                 Width="72" 
-                HorizontalAlignment="Left" Margin="5,5,5,474"/>
+                HorizontalAlignment="Left" Margin="5,5,5,474" Background="#FF525252"/>
         <TextBox x:Name="DocumentNameText"
                 Text="Aucun document sélectionné"
                 IsReadOnly="True"
                 TextWrapping="Wrap"
-                     Margin="5,31,5,446"  />
+                     Margin="5,31,5,446" Background="#FF969696"  />
         <ListBox x:Name="ElectrodeList"
                      Margin="5,58,5,110">
+            <ListBox.Background>
+                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                    <GradientStop Color="#FF6D6A6A" Offset="0.05"/>
+                    <GradientStop Color="White" Offset="0.5"/>
+                </LinearGradientBrush>
+            </ListBox.Background>
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <CheckBox Content="{Binding Name}" 
@@ -26,11 +44,11 @@
         </ListBox>
         <Grid Margin="0,399,0,10">
             <StackPanel>
-                <Button x:Name="actualiser" Content="Actualiser" Height="25" Width="360" Click="Button_Click"/>
+                <Button x:Name="actualiser" Content="Actualiser" Height="25" Width="360" Click="Button_Click" Background="#FF525252"/>
                 <Button x:Name="exporter"
-                    Click="SelectFile_Click" Margin="5,5,5,5" Height="25" Content="Exporter"/>
+                    Click="SelectFile_Click" Margin="5,5,5,5" Height="25" Content="Exporter" Background="#FF525252"/>
                 <Grid>
-                    <Button x:Name="parcourir" Content="Parcourir" Margin="5,5,5,5" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Click="parcourir_Click">
+                    <Button x:Name="parcourir" Content="Parcourir" Margin="5,5,5,5" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Click="parcourir_Click" Background="#FF525252">
                         <Button.RenderTransform>
                             <TransformGroup>
                                 <ScaleTransform ScaleY="1"/>
@@ -40,7 +58,7 @@
                             </TransformGroup>
                         </Button.RenderTransform>
                     </Button>
-                    <TextBox x:Name="chemin" TextWrapping="Wrap" Text="Chemin d'accés dossier" Margin="61,5,0,5" HorizontalAlignment="Left" Width="304"/>
+                    <TextBox x:Name="chemin" TextWrapping="Wrap" Text="Chemin d'accés dossier" Margin="61,5,0,5" HorizontalAlignment="Left" Width="304" Background="#FF969696"/>
                 </Grid>
             </StackPanel>
         </Grid>
