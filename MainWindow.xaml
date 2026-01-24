@@ -1,4 +1,4 @@
-﻿<Window x:Class="ExportElec.MainWindow"
+﻿<Window x:Name="chemin1" x:Class="ExportElec.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Export Electrode STEP" 
@@ -21,7 +21,7 @@
         <Button x:Name="quitter" Content="Quitter"
                 Click="Quit_Click"
                 Width="72" 
-                HorizontalAlignment="Left" Margin="5,5,5,474" Background="#FF525252"/>
+                HorizontalAlignment="Left" Margin="5,5,5,474" Background="#FF525252" Foreground="White"/>
         <TextBox x:Name="DocumentNameText"
                 Text="Aucun document sélectionné"
                 IsReadOnly="True"
@@ -44,11 +44,11 @@
         </ListBox>
         <Grid Margin="0,399,0,10">
             <StackPanel>
-                <Button x:Name="actualiser" Content="Actualiser" Height="25" Width="360" Click="Button_Click" Background="#FF525252"/>
+                <Button x:Name="actualiser" Content="Actualiser" Height="25" Width="360" Click="Button_Click" Background="#FF525252" Foreground="White"/>
                 <Button x:Name="exporter"
-                    Click="SelectFile_Click" Margin="5,5,5,5" Height="25" Content="Exporter" Background="#FF525252"/>
+                    Click="SelectFile_Click" Margin="5,5,5,5" Height="25" Content="Exporter" Background="#FF525252" Foreground="White"/>
                 <Grid>
-                    <Button x:Name="parcourir" Content="Parcourir" Margin="5,5,5,5" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Click="parcourir_Click" Background="#FF525252">
+                    <Button x:Name="parcourir" Content="Parcourir" Margin="5,5,5,5" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Click="parcourir_Click" Background="#FF525252" Foreground="White">
                         <Button.RenderTransform>
                             <TransformGroup>
                                 <ScaleTransform ScaleY="1"/>

@@ -13,6 +13,8 @@ using TopSolid.Cad.Drafting.Automating;
 using TopSolid.Cam.NC.Kernel.Automating;
 using TSH = TopSolid.Kernel.Automating.TopSolidHost;
 using TSHD = TopSolid.Cad.Design.Automating.TopSolidDesignHost;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace ExportElec
 {
@@ -39,8 +41,8 @@ namespace ExportElec
             // Initialisation de currentDoc
             currentDoc = new Document();
             currentDoc.DocId = TSH.Documents.EditedDocument;
-            
-            if (currentDoc.DocId == null)
+
+            if (currentDoc.DocId != null)
             {
                 DocumentNameText.Text = currentDoc.DocNomTxt;
             }
@@ -58,19 +60,19 @@ namespace ExportElec
             {
                 TopSolidHost.Disconnect();
             }
-            if (TopSolidDesignHost.IsConnected) 
-            { 
-                TopSolidDesignHost.Disconnect(); 
+            if (TopSolidDesignHost.IsConnected)
+            {
+                TopSolidDesignHost.Disconnect();
             }
             if (TopSolidDraftingHost.IsConnected)
             {
                 TopSolidDraftingHost.Disconnect();
             }
-            
+
             Application.Current.Shutdown();
         }
 
-       
+
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
@@ -82,9 +84,25 @@ namespace ExportElec
 
         }
 
+       
+
         private void parcourir_Click(object sender, RoutedEventArgs e)
         {
+            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                dialog.Description = "Sélectionner un dossier";
+                dialog.ShowNewFolderButton = true;
 
+                System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+
+                if (result == System.Windows.Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
+                {
+                    // Utiliser la méthode de la DLL OutilsTs
+                    string uncPath = CheminReseau.ConvertToUncPath(dialog.SelectedPath);
+                    chemin.Text = uncPath;
+                }
+            }
         }
     }
 }
+
