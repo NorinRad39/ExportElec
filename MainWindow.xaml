@@ -27,7 +27,7 @@
                 IsReadOnly="True"
                 TextWrapping="Wrap"
                      Margin="5,31,5,446" Background="#FF969696"  />
-        <ListBox x:Name="ElectrodeList"
+        <ListBox x:Name="electrodeList"
                      Margin="5,58,5,110">
             <ListBox.Background>
                 <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">

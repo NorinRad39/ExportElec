@@ -1,3 +1,6 @@
 <Solution>
+  <Project Path="../Classe-outils-topsolid/Classe outils topsolid/OutilsTs.csproj">
+    <Platform Project="x64" />
+  </Project>
   <Project Path="ExportElec.csproj" Id="086ae0d5-ba60-44b7-bc0e-79be8d078ac3" />
 </Solution>
