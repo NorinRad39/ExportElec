@@ -56,6 +56,7 @@ namespace ExportElec
             List<ElementId> operations = ListOperations(elements);
             List<ElementId> operationsActive = OperationsActive(operations);
             List<ElementId> duplicateOperations = DuplicateOperations(operationsActive);
+            duplicateOperations = childrenDuplicateOperation(duplicateOperations);
             PopulateListBox(duplicateOperations);
 
         }
@@ -153,6 +154,27 @@ namespace ExportElec
             }
         }
 
+        private List<ElementId> childrenDuplicateOperation(List<ElementId> duplicateOperations)
+        {
+            List<ElementId> childElementsId = new List<ElementId>();
+
+            if (duplicateOperations == null)
+            {
+                return null;
+            }
+
+            foreach (var operation in duplicateOperations)
+            {
+                childElementsId = TSH.Operations.GetChildren(operation);
+
+            }
+            
+            return childElementsId;
+        }
+
+
+
+
         void PopulateListBox(List<ElementId> operationsActive)
         {
             // Vider la ListBox avant de la remplir
@@ -189,6 +211,7 @@ namespace ExportElec
                 }
             }
         }
+
 
         private void Quit_Click(object sender, RoutedEventArgs e)
         {
