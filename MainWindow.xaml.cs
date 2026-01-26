@@ -14,7 +14,7 @@ using TopSolid.Cad.Design.Automating;
 using TopSolid.Cad.Drafting.Automating;
 using TopSolid.Cam.NC.Kernel.Automating;
 using TopSolid.Kernel.Automating;
-//using TopSolid.Kernel.SX.Collections.Generic;
+
 using TSH = TopSolid.Kernel.Automating.TopSolidHost;
 using TSHD = TopSolid.Cad.Design.Automating.TopSolidDesignHost;
 
@@ -54,10 +54,15 @@ namespace ExportElec
 
             List<ElementId> elements = RecupList(currentDoc.DocId); // Assigner le résultat
             List<ElementId> operations = ListOperations(elements);
-            List<ElementId> operationsActive = OperationsActive(operations);
-            List<ElementId> duplicateOperations = DuplicateOperations(operationsActive);
-            duplicateOperations = childrenDuplicateOperation(duplicateOperations);
-            PopulateListBox(duplicateOperations);
+            List<ElementId> duplicateOperations = searchOperations(operations, "TopSolid.Kernel.DB.Operations.DuplicateCreation");
+            List<ElementId> duplicateOperationsActive = OperationsActive(duplicateOperations);
+            List<ElementId> duplicateOperationsChildElementsId = childrenElements(duplicateOperationsActive);
+
+            List<ElementId> paralleOperations = searchOperations(operations, "TopSolid.Kernel.DB.D3.Shapes.Offset.OffsetOperation");
+            List<ElementId> paralleOperationsActive = OperationsActive(paralleOperations);
+            List<ElementId> paralleOperationsChildElementsId = childrenElements(paralleOperationsActive);
+
+            PopulateListBox(duplicateOperationsChildElementsId);
 
         }
 
@@ -108,6 +113,30 @@ namespace ExportElec
             }
         }
 
+
+        private List<ElementId> searchOperations (List<ElementId> operationsActive, string operationName)
+        {
+            List<ElementId> duplicateOperations = new List<ElementId>();
+
+            if (operationsActive != null || operationsActive.Count > 0)
+            {
+                foreach (var operation in operationsActive)
+                {
+                    // Récupérer le nom de l'élément via l'API TopSolid
+                    string operationFullName = TSH.Elements.GetTypeFullName(operation);
+                    
+                    if (operationFullName == operationName)
+                    {
+                        duplicateOperations.Add(operation);
+                    }
+                }
+                    return duplicateOperations;  
+            }
+            else
+            {
+                return null;
+            }
+        }
         private List<ElementId> OperationsActive(List<ElementId> operations)
         {
             List<ElementId> operationsActive = new List<ElementId>();
@@ -130,49 +159,45 @@ namespace ExportElec
 
         }
 
-        private List<ElementId> DuplicateOperations (List<ElementId> operationsActive)
+        private List<ElementId> childrenElements(List<ElementId> Operations)
         {
-            List<ElementId> duplicateOperations = new List<ElementId>();
+            List<ElementId> childrenElementsId = new List<ElementId>();
 
-            if (operationsActive != null || operationsActive.Count > 0)
+            if (Operations == null)
             {
-                foreach (var operation in operationsActive)
+                return null;
+            }
+
+            foreach (var operation in Operations)
+            {
+                List<ElementId> children = TSH.Operations.GetChildren(operation);
+                
+                if (children != null && children.Count > 0)
                 {
-                    // Récupérer le nom de l'élément via l'API TopSolid
-                    string operationName = TSH.Elements.GetTypeFullName(operation);
-                    
-                    if (operationName == "TopSolid.Kernel.DB.Operations.DuplicateCreation")
-                    {
-                        duplicateOperations.Add(operation);
-                    }
+                    childrenElementsId.AddRange(children); // Ajouter tous les enfants à la liste
                 }
-                    return duplicateOperations;  
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        private List<ElementId> childrenDuplicateOperation(List<ElementId> duplicateOperations)
-        {
-            List<ElementId> childElementsId = new List<ElementId>();
-
-            if (duplicateOperations == null)
-            {
-                return null;
-            }
-
-            foreach (var operation in duplicateOperations)
-            {
-                childElementsId = TSH.Operations.GetChildren(operation);
-
             }
             
-            return childElementsId;
+            return childrenElementsId;
         }
 
+        
 
+        private List<ElementId> OwnerElementIds(List<ElementId> childElementsId)
+        {
+            List<ElementId> ownerElementIds = new List<ElementId>();
+            if (childElementsId != null)
+            {
+                foreach (var childElementId in childElementsId)
+                {
+                    ElementId ownerElementId = TSH.Elements.GetOwner(childElementId);
+                    ownerElementIds.Add(ownerElementId);
+                }               
+            }
+            return ownerElementIds;
+        }
+
+        
 
 
         void PopulateListBox(List<ElementId> operationsActive)
