@@ -60,9 +60,10 @@ namespace ExportElec
 
             List<ElementId> paralleOperations = searchOperations(operations, "TopSolid.Kernel.DB.D3.Shapes.Offset.OffsetOperation");
             List<ElementId> paralleOperationsActive = OperationsActive(paralleOperations);
+            List<ElementId> elementsConstituant = ElementsConstituant(paralleOperationsActive);
             List<ElementId> paralleOperationsChildElementsId = childrenElements(paralleOperationsActive);
 
-            PopulateListBox(duplicateOperationsChildElementsId);
+            PopulateListBox(elementsConstituant);
 
         }
 
@@ -183,18 +184,21 @@ namespace ExportElec
 
         
 
-        private List<ElementId> OwnerElementIds(List<ElementId> childElementsId)
+        private List<ElementId> ElementsConstituant(List<ElementId> elementIds)
         {
-            List<ElementId> ownerElementIds = new List<ElementId>();
-            if (childElementsId != null)
+            List<ElementId> setElementIds = new List<ElementId>();
+            if (elementIds != null)
             {
-                foreach (var childElementId in childElementsId)
+                foreach (var elementId in elementIds)
                 {
-                    ElementId ownerElementId = TSH.Elements.GetOwner(childElementId);
-                    ownerElementIds.Add(ownerElementId);
+                    List<ElementId> constituents = TSH.Elements.GetConstituents(elementId);
+                    if (constituents != null && constituents.Count > 0)
+                    {
+                        setElementIds.AddRange(constituents);
+                    }
                 }               
             }
-            return ownerElementIds;
+            return setElementIds;
         }
 
         
