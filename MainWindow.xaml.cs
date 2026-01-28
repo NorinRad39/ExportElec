@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.Xml.Linq;
 using TopSolid.Cad.Design.Automating;
@@ -52,47 +53,19 @@ namespace ExportElec
                 DocumentNameText.Text = "aucun document ouvert";
             }
 
-            List<ElementId> shapes = RecupShapes(currentDoc.DocId); // Assigner le résultat
-            List<double> shapeVolumes = RecupShapesVolume(shapes);
 
-            /*List<ElementId> elements = RecupList(currentDoc.DocId); // Assigner le résultat
+            List<ElementId> elements = RecupList(currentDoc.DocId);
             List<ElementId> operations = ListOperations(elements);
-            List<ElementId> duplicateOperations = searchOperations(operations, "TopSolid.Kernel.DB.Operations.DuplicateCreation");
-            List<ElementId> duplicateOperationsActive = OperationsActive(duplicateOperations);
-            List<ElementId> duplicateOperationsChildElementsId = childrenElements(duplicateOperationsActive);
-
-            List<ElementId> paralleOperations = searchOperations(operations, "TopSolid.Kernel.DB.D3.Shapes.Offset.OffsetOperation");
-            List<ElementId> paralleOperationsActive = OperationsActive(paralleOperations);
-            List<ElementId> elementsConstituant = ElementsConstituant(paralleOperationsActive);
-            List<ElementId> paralleOperationsChildElementsId = childrenElements(paralleOperationsActive);*/
+            List<ElementId> operationsActives = OperationsActive(operations);
+            List<ElementId> duplicateOperations = searchOperations(operationsActives, "TopSolid.Kernel.DB.Operations.DuplicateCreation");
+            List<ElementId> duplicateOperationsChildElementsId = childrenElements(duplicateOperations);
+            ElementId electrodeId = SearchElectrode(currentDoc.DocId, "Electrode");
+            List<ElementId> ShapesList = AddShapeToList(duplicateOperationsChildElementsId, electrodeId);
+            List<double> shapeVolumes = RecupShapesVolume(ShapesList);
 
             PopulateListDoublesBox(shapeVolumes);
-
         }
 
-        private List<ElementId> RecupShapes(DocumentId docId)
-        {
-            List<ElementId> shapes = new List<ElementId>();
-            try
-            {
-                if (currentDoc.DocId != null)
-                {
-                    shapes = TSH.Shapes.GetShapes (docId);
-                    return shapes;
-                }
-                else
-                {
-                    DocumentNameText.Text = "aucun document ouvert, la liste des shapes ne peut pas être chargée";
-                    return null;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Erreur lors du chargement des shapes: {ex.Message}",
-                                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
-                return null;
-            }
-        }
 
         private List<double> RecupShapesVolume(List<ElementId> shapes)
         {
@@ -109,6 +82,64 @@ namespace ExportElec
                     }
 ;
                     return shapeVolumes;
+                }
+                else
+                {
+                    DocumentNameText.Text = "aucun document ouvert, la liste des shapes ne peut pas être chargée";
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur lors du chargement des shapes: {ex.Message}",
+                                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
+        }
+
+        private ElementId SearchElectrode(DocumentId DocId, string electrodeName)
+        {
+            ElementId electrodeId = new ElementId();
+            try
+            {
+                if (currentDoc.DocId != null)
+                {
+                    List<ElementId> elements = currentDoc.DocElements;
+                    foreach (var element in elements)
+                    {
+                        string elementName = TSH.Elements.GetFriendlyName(element);
+                        if (elementName == electrodeName)
+                        {
+                            electrodeId = element;
+                            break; // Sortir de la boucle une fois l'élément trouvé
+                        }
+                    }
+                    return electrodeId;
+                }
+                else
+                {
+                    DocumentNameText.Text = "aucun document ouvert, l'électrode ne peut pas être trouvée";
+                    return ElementId.Empty;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur lors de la recherche de l'électrode: {ex.Message}",
+                                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+                return ElementId.Empty;
+            }
+        }
+
+
+        private List<ElementId> AddShapeToList(List<ElementId> duplicateOperationsChildElementsId, ElementId electrodeId)
+        {
+            List<ElementId> shapeList = new List<ElementId>();
+            try
+            {
+                if (duplicateOperationsChildElementsId.Count > 0 && !electrodeId.IsEmpty)
+                {
+                    duplicateOperationsChildElementsId.Add(electrodeId);
+                    return duplicateOperationsChildElementsId;
                 }
                 else
                 {
