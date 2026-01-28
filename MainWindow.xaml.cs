@@ -52,7 +52,10 @@ namespace ExportElec
                 DocumentNameText.Text = "aucun document ouvert";
             }
 
-            List<ElementId> elements = RecupList(currentDoc.DocId); // Assigner le résultat
+            List<ElementId> shapes = RecupShapes(currentDoc.DocId); // Assigner le résultat
+            List<double> shapeVolumes = RecupShapesVolume(shapes);
+
+            /*List<ElementId> elements = RecupList(currentDoc.DocId); // Assigner le résultat
             List<ElementId> operations = ListOperations(elements);
             List<ElementId> duplicateOperations = searchOperations(operations, "TopSolid.Kernel.DB.Operations.DuplicateCreation");
             List<ElementId> duplicateOperationsActive = OperationsActive(duplicateOperations);
@@ -61,10 +64,110 @@ namespace ExportElec
             List<ElementId> paralleOperations = searchOperations(operations, "TopSolid.Kernel.DB.D3.Shapes.Offset.OffsetOperation");
             List<ElementId> paralleOperationsActive = OperationsActive(paralleOperations);
             List<ElementId> elementsConstituant = ElementsConstituant(paralleOperationsActive);
-            List<ElementId> paralleOperationsChildElementsId = childrenElements(paralleOperationsActive);
+            List<ElementId> paralleOperationsChildElementsId = childrenElements(paralleOperationsActive);*/
 
-            PopulateListBox(elementsConstituant);
+            PopulateListDoublesBox(shapeVolumes);
 
+        }
+
+        private List<ElementId> RecupShapes(DocumentId docId)
+        {
+            List<ElementId> shapes = new List<ElementId>();
+            try
+            {
+                if (currentDoc.DocId != null)
+                {
+                    shapes = TSH.Shapes.GetShapes (docId);
+                    return shapes;
+                }
+                else
+                {
+                    DocumentNameText.Text = "aucun document ouvert, la liste des shapes ne peut pas être chargée";
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur lors du chargement des shapes: {ex.Message}",
+                                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
+        }
+
+        private List<double> RecupShapesVolume(List<ElementId> shapes)
+        {
+            List<double> shapeVolumes = new List<double>();
+
+            try
+            {
+                if (shapes != null)
+                {
+                    foreach (var shape in shapes)
+                    {
+                        double shapeVolume = TSH.Shapes.GetShapeVolume(shape);
+                        shapeVolumes.Add(shapeVolume);
+                    }
+;
+                    return shapeVolumes;
+                }
+                else
+                {
+                    DocumentNameText.Text = "aucun document ouvert, la liste des shapes ne peut pas être chargée";
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur lors du chargement des shapes: {ex.Message}",
+                                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
+        }
+
+        void PopulateListDoublesBox(List<double> shapeVolumes)
+        {
+            // Vider la ListBox avant de la remplir
+            electrodeList.Items.Clear();
+
+            if (shapeVolumes == null || shapeVolumes.Count == 0)
+            {
+                electrodeList.Items.Add("Aucun élément trouvé");
+                return;
+            }
+
+            foreach (var shapeVolume in shapeVolumes)
+            {
+                try
+                {
+                    // Convertir de m³ en mm³ (1 m³ = 1 000 000 000 mm³)
+                    double volumeMm3 = shapeVolume * 1_000_000_000;
+                    
+                    // Formater le volume pour l'affichage
+                    string volumeText = $"Volume: {volumeMm3:F2} mm³";
+                    
+                    // Créer un objet ElementItem avec le volume
+                    var item = new ElementItem
+                    {
+                        Name = volumeText,
+                        IsChecked = false,
+                        ElementId = ElementId.Empty // Pas d'ElementId pour un volume
+                    };
+                    
+                    // Ajouter l'élément à la ListBox
+                    electrodeList.Items.Add(item);
+                }
+                catch
+                {
+                    // En cas d'erreur, afficher le volume brut
+                    double volumeMm3 = shapeVolume * 1_000_000_000;
+                    electrodeList.Items.Add(new ElementItem 
+                    { 
+                        Name = $"Volume (erreur): {volumeMm3}",
+                        IsChecked = false,
+                        ElementId = ElementId.Empty
+                    });
+                }
+            }
         }
 
         private List<ElementId> RecupList(DocumentId DocId)
