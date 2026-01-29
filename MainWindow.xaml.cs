@@ -38,6 +38,8 @@ namespace ExportElec
             InitializeForm();
 
         }
+
+        #region Initialisation du formulaire
         private void InitializeForm()
         {
             // Initialisation de currentDoc
@@ -53,50 +55,162 @@ namespace ExportElec
                 DocumentNameText.Text = "aucun document ouvert";
             }
 
-
+            //Etape 1 : Récupération des éléments du document
             List<ElementId> elements = RecupList(currentDoc.DocId);
+
+            //Etape 2 : Filtrage des opérations
             List<ElementId> operations = ListOperations(elements);
+
+            //Etape 3 : Filtrage des opérations actives
             List<ElementId> operationsActives = OperationsActive(operations);
+
+            //Etape 4 : Recherche des opérations de duplication
             List<ElementId> duplicateOperations = searchOperations(operationsActives, "TopSolid.Kernel.DB.Operations.DuplicateCreation");
+
+            //Etape 5 : Récupération des éléments enfants des opérations de duplication
             List<ElementId> duplicateOperationsChildElementsId = childrenElements(duplicateOperations);
+
+            //Etape 6 : Récupération de l'électrode
             ElementId electrodeId = SearchElectrode(currentDoc.DocId, "Electrode");
+
+            //Etape 7 : Ajout de l'électrode à la liste des shapes
             List<ElementId> ShapesList = AddShapeToList(duplicateOperationsChildElementsId, electrodeId);
+
+            //Etape 8 : Récupération des volumes des shapes
             List<double> shapeVolumes = RecupShapesVolume(ShapesList);
 
+            //Etape 9 : Remplissage de la ListBox avec les volumes des shapes
             PopulateListDoublesBox(shapeVolumes);
         }
+        #endregion
 
-
-        private List<double> RecupShapesVolume(List<ElementId> shapes)
+        #region Etape 1 : Récupération des éléments du document
+        private List<ElementId> RecupList(DocumentId DocId)
         {
-            List<double> shapeVolumes = new List<double>();
+            List<ElementId> elements = new List<ElementId>();
 
             try
             {
-                if (shapes != null)
+                if (currentDoc.DocId != null)
                 {
-                    foreach (var shape in shapes)
-                    {
-                        double shapeVolume = TSH.Shapes.GetShapeVolume(shape);
-                        shapeVolumes.Add(shapeVolume);
-                    }
-;
-                    return shapeVolumes;
+                    elements = currentDoc.DocElements;
+
+                    return elements;
                 }
                 else
                 {
-                    DocumentNameText.Text = "aucun document ouvert, la liste des shapes ne peut pas être chargée";
+                    DocumentNameText.Text = "aucun document ouvert, la liste des elements ne peut pas être chargée";
                     return null;
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Erreur lors du chargement des shapes: {ex.Message}",
+                MessageBox.Show($"Erreur lors du chargement des éléments: {ex.Message}",
                                 "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
         }
+        #endregion
 
+        #region Etape 2 : Filtrage des opérations
+        private List<ElementId> ListOperations(List<ElementId> elements)
+        {
+            List<ElementId> operations = new List<ElementId>();
+
+            if (elements != null || elements.Count > 0)
+            {
+                foreach (var element in elements)
+                {
+                    if (TSH.Operations.IsOperation(element))
+                    {
+                        operations.Add(element);
+                    }
+                }
+                return operations;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        #endregion
+
+        #region Etape 3 : Filtrage des opérations actives
+        private List<ElementId> OperationsActive(List<ElementId> operations)
+        {
+            List<ElementId> operationsActive = new List<ElementId>();
+
+            if (operations != null && operations.Count > 0)
+            {
+                foreach (var operation in operations)
+                {
+                    if (TSH.Operations.IsActive(operation))
+                    {
+                        operationsActive.Add(operation);
+                    }
+                }
+                return operationsActive;
+            }
+            else
+            {
+                return null;
+            }
+
+        }
+        #endregion
+
+        #region Etape 4 : Recherche des opérations de duplication
+        private List<ElementId> searchOperations (List<ElementId> operationsActive, string operationName)
+        {
+            List<ElementId> duplicateOperations = new List<ElementId>();
+
+            if (operationsActive != null || operationsActive.Count > 0)
+            {
+                foreach (var operation in operationsActive)
+                {
+                    // Récupérer le nom de l'élément via l'API TopSolid
+                    string operationFullName = TSH.Elements.GetTypeFullName(operation);
+                    
+                    if (operationFullName == operationName)
+                    {
+                        duplicateOperations.Add(operation);
+                    }
+                }
+                    return duplicateOperations;  
+            }
+            else
+            {
+                return null;
+            }
+        }
+        #endregion
+
+        #region Etape 5 : Récupération des éléments enfants des opérations de duplication
+        private List<ElementId> childrenElements(List<ElementId> Operations)
+        {
+            List<ElementId> childrenElementsId = new List<ElementId>();
+
+            if (Operations == null)
+            {
+                return null;
+            }
+
+            foreach (var operation in Operations)
+            {
+                List<ElementId> children = TSH.Operations.GetChildren(operation);
+                
+                if (children != null && children.Count > 0)
+                {
+                    childrenElementsId.AddRange(children); // Ajouter tous les enfants à la liste
+                }
+            }
+            
+            return childrenElementsId;
+        }
+
+        #endregion
+        
+        #region Etape 6 : Recherche de l'électrode
         private ElementId SearchElectrode(DocumentId DocId, string electrodeName)
         {
             ElementId electrodeId = new ElementId();
@@ -129,8 +243,9 @@ namespace ExportElec
                 return ElementId.Empty;
             }
         }
+        #endregion
 
-
+        #region Etape 7 : Ajout de l'électrode à la liste des shapes
         private List<ElementId> AddShapeToList(List<ElementId> duplicateOperationsChildElementsId, ElementId electrodeId)
         {
             List<ElementId> shapeList = new List<ElementId>();
@@ -154,7 +269,41 @@ namespace ExportElec
                 return null;
             }
         }
+        #endregion
+       
+        #region Etape 8 : Récupération des volumes des shapes
+        private List<double> RecupShapesVolume(List<ElementId> shapes)
+        {
+            List<double> shapeVolumes = new List<double>();
 
+            try
+            {
+                if (shapes != null)
+                {
+                    foreach (var shape in shapes)
+                    {
+                        double shapeVolume = TSH.Shapes.GetShapeVolume(shape);
+                        shapeVolumes.Add(shapeVolume);
+                    }
+;
+                    return shapeVolumes;
+                }
+                else
+                {
+                    DocumentNameText.Text = "aucun document ouvert, la liste des shapes ne peut pas être chargée";
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur lors du chargement des shapes: {ex.Message}",
+                                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
+        }
+        #endregion
+
+        #region Etape 9 : Remplissage de la ListBox avec les volumes des shapes
         void PopulateListDoublesBox(List<double> shapeVolumes)
         {
             // Vider la ListBox avant de la remplir
@@ -200,123 +349,9 @@ namespace ExportElec
                 }
             }
         }
-
-        private List<ElementId> RecupList(DocumentId DocId)
-        {
-            List<ElementId> elements = new List<ElementId>();
-
-            try
-            {
-                if (currentDoc.DocId != null)
-                {
-                    elements = currentDoc.DocElements;
-
-                    return elements;
-                }
-                else
-                {
-                    DocumentNameText.Text = "aucun document ouvert, la liste des elements ne peut pas être chargée";
-                    return null;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Erreur lors du chargement des éléments: {ex.Message}",
-                                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
-                return null;
-            }
-        }
-
-        private List<ElementId> ListOperations(List<ElementId> elements)
-        {
-            List<ElementId> operations = new List<ElementId>();
-
-            if (elements != null || elements.Count > 0)
-            {
-                foreach (var element in elements)
-                {
-                    if (TSH.Operations.IsOperation(element))
-                    {
-                        operations.Add(element);
-                    }
-                }
-                return operations;
-            }
-            else
-            {
-                return null;
-            }
-        }
+        #endregion
 
 
-        private List<ElementId> searchOperations (List<ElementId> operationsActive, string operationName)
-        {
-            List<ElementId> duplicateOperations = new List<ElementId>();
-
-            if (operationsActive != null || operationsActive.Count > 0)
-            {
-                foreach (var operation in operationsActive)
-                {
-                    // Récupérer le nom de l'élément via l'API TopSolid
-                    string operationFullName = TSH.Elements.GetTypeFullName(operation);
-                    
-                    if (operationFullName == operationName)
-                    {
-                        duplicateOperations.Add(operation);
-                    }
-                }
-                    return duplicateOperations;  
-            }
-            else
-            {
-                return null;
-            }
-        }
-        private List<ElementId> OperationsActive(List<ElementId> operations)
-        {
-            List<ElementId> operationsActive = new List<ElementId>();
-
-            if (operations != null && operations.Count > 0)
-            {
-                foreach (var operation in operations)
-                {
-                    if (TSH.Operations.IsActive(operation))
-                    {
-                        operationsActive.Add(operation);
-                    }
-                }
-                return operationsActive;
-            }
-            else
-            {
-                return null;
-            }
-
-        }
-
-        private List<ElementId> childrenElements(List<ElementId> Operations)
-        {
-            List<ElementId> childrenElementsId = new List<ElementId>();
-
-            if (Operations == null)
-            {
-                return null;
-            }
-
-            foreach (var operation in Operations)
-            {
-                List<ElementId> children = TSH.Operations.GetChildren(operation);
-                
-                if (children != null && children.Count > 0)
-                {
-                    childrenElementsId.AddRange(children); // Ajouter tous les enfants à la liste
-                }
-            }
-            
-            return childrenElementsId;
-        }
-
-        
 
         private List<ElementId> ElementsConstituant(List<ElementId> elementIds)
         {
@@ -375,7 +410,7 @@ namespace ExportElec
             }
         }
 
-
+        #region Bouton Quitter
         private void Quit_Click(object sender, RoutedEventArgs e)
         {
             if (TopSolidHost.IsConnected)
@@ -394,6 +429,7 @@ namespace ExportElec
             Application.Current.Shutdown();
         }
 
+        #endregion
 
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -407,7 +443,7 @@ namespace ExportElec
         }
 
 
-
+        #region Bouton Parcourir
         private void parcourir_Click(object sender, RoutedEventArgs e)
         {
             using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
@@ -428,6 +464,7 @@ namespace ExportElec
 
 
     }
+    #endregion
 
     // Ajouter cette classe dans le fichier MainWindow.xaml.cs
     public class ElementItem
