@@ -16,7 +16,6 @@ using TopSolid.Cad.Design.Automating;
 using TopSolid.Cad.Drafting.Automating;
 using TopSolid.Cam.NC.Kernel.Automating;
 using TopSolid.Kernel.Automating;
-
 using TSH = TopSolid.Kernel.Automating.TopSolidHost;
 using TSHD = TopSolid.Cad.Design.Automating.TopSolidDesignHost;
 
@@ -54,8 +53,12 @@ namespace ExportElec
         /// </summary>
         public MainWindow()
         {
-            InitializeComponent();
+            // Pour capturer plus de détails, ajoutez ceci dans votre code
             
+                InitializeComponent();
+           
+            
+
             // Connexion à TopSolid
             startConnect = new StartConnect();
             startConnect.ConnectionTopsolid();
@@ -236,7 +239,7 @@ namespace ExportElec
         {
             List<ElementId> operations = new List<ElementId>();
 
-            if (elements != null || elements.Count > 0)
+            if (elements != null && elements.Count > 0)
             {
                 foreach (var element in elements)
                 {
@@ -299,7 +302,7 @@ namespace ExportElec
         {
             List<ElementId> duplicateOperations = new List<ElementId>();
 
-            if (operationsActive != null || operationsActive.Count > 0)
+            if (operationsActive != null && operationsActive.Count > 0)
             {
                 foreach (var operation in operationsActive)
                 {
@@ -511,29 +514,29 @@ namespace ExportElec
 
             try
             {
-                // Créer des objets Element pour tous les shapes valides
-                List<Element> elements = new List<Element>();
+                // Créer des objets Element pour tous les shapes
+                List<Element> allElements = new List<Element>();
+                Element electrodeWithoutGap = null;
+                
                 foreach (var shapeId in shapesIds)
                 {
                     Element element = new Element(shapeId);
-                    if (element.IsShape && element.VolumeMm3.HasValue)
+                    string friendlyName = TSH.Elements.GetFriendlyName(shapeId);
+                    
+                    // Traiter l'électrode "Electrode" spécialement (Sans GAP)
+                    if (friendlyName == "Electrode")
                     {
-                        elements.Add(element);
+                        electrodeWithoutGap = element;
+                    }
+                    else if (element.IsShape && element.VolumeMm3.HasValue)
+                    {
+                        // Les autres doivent être des shapes valides avec volume
+                        allElements.Add(element);
                     }
                 }
 
-                if (elements.Count == 0)
-                {
-                    electrodeList.Items.Add("Aucun shape valide trouvé");
-                    return;
-                }
-
-                // Séparer l'électrode "Sans GAP" (celle de l'étape 6) des autres
-                Element electrodeWithoutGap = elements.FirstOrDefault(e => e.FriendlyName == "Electrode");
-                List<Element> duplicatedElectrodes = elements.Where(e => e.FriendlyName != "Electrode").ToList();
-
                 // Trier les électrodes dupliquées par volume croissant
-                duplicatedElectrodes = duplicatedElectrodes.OrderBy(e => e.VolumeMm3).ToList();
+                List<Element> duplicatedElectrodes = allElements.OrderBy(e => e.VolumeMm3).ToList();
 
                 // Classifier selon le nombre d'électrodes dupliquées
                 List<ElementItem> items = new List<ElementItem>();
@@ -548,7 +551,7 @@ namespace ExportElec
                         // Cas 1 : 1 seule shape → Electrode d'ébauche
                         items.Add(new ElementItem
                         {
-                            Name = $"Ebauche: {gapEb} mm",
+                            Name = $"Finition: {gapFini} mm",
                             IsChecked = true,
                             ElementId = duplicatedElectrodes[0].ElementId
                         });
@@ -601,7 +604,7 @@ namespace ExportElec
                         break;
                 }
 
-                // Ajouter l'électrode "Sans GAP" en dernier
+                // Ajouter l'électrode "Sans GAP" en dernier si elle existe
                 if (electrodeWithoutGap != null)
                 {
                     items.Add(new ElementItem
@@ -823,23 +826,31 @@ private void SelectFile_Click(object sender, RoutedEventArgs e)
         List<ElementId> ShapesList = AddShapeToList(duplicateOperationsChildElementsId, electrodeId);
 
         // Recréer les objets Element avec les nouveaux ElementId
-        List<Element> reloadedElements = new List<Element>();
+        List<Element> allReloadedElements = new List<Element>();
+        Element electrodeWithoutGap = null;
+        
         if (ShapesList != null)
         {
             foreach (var shapeId in ShapesList)
             {
                 Element element = new Element(shapeId);
-                if (element.IsShape && element.VolumeMm3.HasValue)
+                string friendlyName = TSH.Elements.GetFriendlyName(shapeId);
+                
+                // Traiter l'électrode "Electrode" spécialement (Sans GAP)
+                if (friendlyName == "Electrode")
                 {
-                    reloadedElements.Add(element);
+                    electrodeWithoutGap = element;
+                }
+                else if (element.IsShape && element.VolumeMm3.HasValue)
+                {
+                    // Les autres doivent être des shapes valides avec volume
+                    allReloadedElements.Add(element);
                 }
             }
         }
 
-        // Séparer et trier comme dans ClassifyAndDisplayElectrodes
-        Element electrodeWithoutGap = reloadedElements.FirstOrDefault(ele => ele.FriendlyName == "Electrode");
-        List<Element> duplicatedElectrodes = reloadedElements.Where(ele => ele.FriendlyName != "Electrode").ToList();
-        duplicatedElectrodes = duplicatedElectrodes.OrderBy(ele => ele.VolumeMm3).ToList();
+        // Trier les électrodes dupliquées par volume croissant
+        List<Element> duplicatedElectrodes = allReloadedElements.OrderBy(ele => ele.VolumeMm3).ToList();
 
         // Recréer la correspondance entre les noms et les nouveaux ElementId
         Dictionary<string, ElementId> electrodeMapping = new Dictionary<string, ElementId>();
