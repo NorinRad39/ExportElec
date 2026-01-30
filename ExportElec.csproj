@@ -40,6 +40,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="OutilsTs, Version=1.0.9.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>packages\OutilsTs.1.0.9\lib\net481\OutilsTs.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing.Common, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
@@ -126,12 +129,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Classe-outils-topsolid\Classe outils topsolid\OutilsTs.csproj">
-      <Project>{e2d81e73-a4dc-47bb-bc93-acbebde63f1d}</Project>
-      <Name>OutilsTs</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="icone.png" />
