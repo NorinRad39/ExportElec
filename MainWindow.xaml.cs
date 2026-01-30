@@ -726,252 +726,216 @@ private void RechargerDocument()
 /// Gère le clic sur le bouton Export : exporte les électrodes sélectionnées
 /// </summary>
 /// <param name="sender">Source de l'événement</param>
-/// <param name="e">Arguments de l'événement</param>
-private void SelectFile_Click(object sender, RoutedEventArgs e)
+/// <param name="args">Arguments de l'événement</param>
+private void SelectFile_Click(object sender, RoutedEventArgs args)
 {
     try
     {
-        // Vérifier qu'on a un document ouvert
-        if (currentDoc?.DocId == null)
+        // Vérifications initiales...
+        if (currentDoc?.DocId == null || string.IsNullOrWhiteSpace(chemin.Text))
         {
-            MessageBox.Show("Aucun document ouvert", "Erreur", 
-                            MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Vérifiez qu'un document est ouvert et qu'un chemin est sélectionné", 
+                            "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        // Vérifier qu'on a un chemin d'export
-        if (string.IsNullOrWhiteSpace(chemin.Text))
-        {
-            MessageBox.Show("Veuillez sélectionner un dossier de destination", "Erreur", 
-                            MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-
-        // Récupérer les paramètres AVANT toute modification
+        // Récupérer les paramètres
         string nomDocu = GetParameterValue(currentDoc, "Nom_docu");
         string designation = GetParameterValue(currentDoc, "Designation");
         string nomElec = GetParameterValue(currentDoc, "Nom elec");
 
-        if (string.IsNullOrEmpty(nomDocu))
+        if (string.IsNullOrEmpty(nomDocu) || string.IsNullOrEmpty(designation) || string.IsNullOrEmpty(nomElec))
         {
-            MessageBox.Show("Le paramètre 'Nom_docu' n'a pas été trouvé dans le document", 
-                            "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Certains paramètres sont manquants", "Erreur", 
+                            MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (string.IsNullOrEmpty(designation))
-        {
-            MessageBox.Show("Le paramètre 'Designation' n'a pas été trouvé dans le document", 
-                            "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-
-        if (string.IsNullOrEmpty(nomElec))
-        {
-            MessageBox.Show("Le paramètre 'Nom elec' n'a pas été trouvé dans le document", 
-                            "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-
-        // Construire le chemin d'export complet avec la structure de dossiers
+        // Construire le chemin d'export
         string cheminExportFinal = BuildExportPath(chemin.Text, nomDocu, designation);
-
         if (string.IsNullOrEmpty(cheminExportFinal))
         {
-            MessageBox.Show("Impossible de créer la structure de dossiers", 
-                            "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
 
-        // Afficher une fenêtre de validation du chemin d'export
+        // Validation
         MessageBoxResult validation = MessageBox.Show(
-            $"Les fichiers seront exportés dans le dossier suivant :\n\n{cheminExportFinal}\n\nVoulez-vous continuer ?",
-            "Validation du chemin d'export",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question);
+            $"Les fichiers seront exportés dans :\n\n{cheminExportFinal}\n\nContinuer ?",
+            "Validation", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
-        // Si l'utilisateur annule, arrêter le processus
         if (validation == MessageBoxResult.No)
         {
-            MessageBox.Show("Export annulé par l'utilisateur", "Export annulé", 
+            return;
+        }
+
+        // Créer une liste des électrodes cochées AVANT toute modification
+        List<(string Name, ElementId OriginalId)> electrodesToExport = new List<(string, ElementId)>();
+        List<(string Name, ElementId OriginalId)> sansGapList = new List<(string, ElementId)>();
+        
+        foreach (ElementItem item in electrodeList.Items)
+        {
+            if (item.IsChecked)
+            {
+                // Séparer "Sans GAP" pour l'exporter en dernier
+                if (item.Name == "Sans GAP")
+                {
+                    sansGapList.Add((item.Name, item.ElementId));
+                }
+                else
+                {
+                    electrodesToExport.Add((item.Name, item.ElementId));
+                }
+            }
+        }
+        
+        // Ajouter "Sans GAP" à la fin
+        electrodesToExport.AddRange(sansGapList);
+
+        if (electrodesToExport.Count == 0)
+        {
+            MessageBox.Show("Aucune électrode cochée", "Information", 
                             MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        // Créer une liste des noms et états cochés AVANT EnsureIsDirty
-        List<(string Name, bool IsChecked)> electrodesToExport = new List<(string, bool)>();
-        foreach (ElementItem item in electrodeList.Items)
-        {
-            electrodesToExport.Add((item.Name, item.IsChecked));
-        }
-
-        // IMPORTANT : Rendre le document dirty UNE SEULE FOIS au début
-        DocumentId workingDocId = currentDoc.DocId;
-        
-        if (TSH.Application.StartModification("Préparation export électrodes", false))
-        {
-            try
-            {
-                TSH.Documents.EnsureIsDirty(ref workingDocId);
-                currentDoc.DocId = workingDocId;
-                TSH.Application.EndModification(true, true);
-            }
-            catch
-            {
-                TSH.Application.EndModification(false, false);
-                MessageBox.Show("Impossible de préparer le document pour l'export", 
-                                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-        }
-        else
-        {
-            MessageBox.Show("Impossible de démarrer la modification du document", 
-                            "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
-            return;
-        }
-
-        // RECHARGER les éléments avec le nouveau DocumentId après EnsureIsDirty
-        List<ElementId> elements = RecupList(workingDocId);
-        List<ElementId> operations = ListOperations(elements);
-        List<ElementId> operationsActives = OperationsActive(operations);
-        List<ElementId> duplicateOperations = searchOperations(operationsActives, "TopSolid.Kernel.DB.Operations.DuplicateCreation");
-        List<ElementId> duplicateOperationsChildElementsId = childrenElements(duplicateOperations);
-        ElementId electrodeId = SearchElectrode(workingDocId, "Electrode");
-        List<ElementId> ShapesList = AddShapeToList(duplicateOperationsChildElementsId, electrodeId);
-
-        // Recréer les objets Element avec les nouveaux ElementId
-        List<Element> allReloadedElements = new List<Element>();
-        Element electrodeWithoutGap = null;
-        
-        if (ShapesList != null)
-        {
-            foreach (var shapeId in ShapesList)
-            {
-                Element element = new Element(shapeId);
-                string friendlyName = TSH.Elements.GetFriendlyName(shapeId);
-                
-                // Traiter l'électrode "Electrode" spécialement (Sans GAP)
-                if (friendlyName == "Electrode")
-                {
-                    electrodeWithoutGap = element;
-                }
-                else if (element.IsShape && element.VolumeMm3.HasValue)
-                {
-                    // Les autres doivent être des shapes valides avec volume
-                    allReloadedElements.Add(element);
-                }
-            }
-        }
-
-        // Trier les électrodes dupliquées par volume croissant
-        List<Element> duplicatedElectrodes = allReloadedElements.OrderBy(ele => ele.VolumeMm3).ToList();
-
-        // Recréer la correspondance entre les noms et les nouveaux ElementId
-        Dictionary<string, ElementId> electrodeMapping = new Dictionary<string, ElementId>();
-
-        int index = 0;
-        foreach (var elec in duplicatedElectrodes)
-        {
-            if (index < electrodesToExport.Count)
-            {
-                var originalItem = electrodesToExport[index];
-                if (originalItem.Name != "Sans GAP")
-                {
-                    electrodeMapping[originalItem.Name] = elec.ElementId;
-                    index++;
-                }
-            }
-        }
-
-        // Ajouter l'électrode sans GAP
-        if (electrodeWithoutGap != null)
-        {
-            electrodeMapping["Sans GAP"] = electrodeWithoutGap.ElementId;
-        }
-
         int exportCount = 0;
         int errorCount = 0;
+        DocumentId workingDocId = currentDoc.DocId;
+        ElementId representationId = ElementId.Empty;
 
-        // Parcourir les électrodes à exporter avec les nouveaux ElementId
-        foreach (var (name, isChecked) in electrodesToExport)
+        try
         {
-            if (isChecked && electrodeMapping.ContainsKey(name))
+            // Rendre le document dirty et récupérer la représentation détaillée
+            if (TSH.Application.StartModification("Préparation exports électrodes", false))
             {
+                try
+                {
+                    // Rendre le document dirty
+                    TSH.Documents.EnsureIsDirty(ref workingDocId);
+                    currentDoc.DocId = workingDocId;
+
+                    // Récupérer la représentation détaillée existante
+                    representationId = TSHD.Representations.GetDetailedRepresentation(workingDocId);
+                    
+                    if (representationId.IsEmpty)
+                    {
+                        throw new Exception("Impossible de récupérer la représentation détaillée");
+                    }
+
+                    TSH.Application.EndModification(true, true);
+                }
+                catch
+                {
+                    TSH.Application.EndModification(false, false);
+                    throw;
+                }
+            }
+            else
+            {
+                throw new Exception("Impossible de démarrer la modification");
+            }
+
+            // RECHARGER les éléments avec le nouveau DocumentId
+            List<ElementId> elements = RecupList(workingDocId);
+            List<ElementId> operations = ListOperations(elements);
+            List<ElementId> operationsActives = OperationsActive(operations);
+            List<ElementId> duplicateOperations = searchOperations(operationsActives, "TopSolid.Kernel.DB.Operations.DuplicateCreation");
+            List<ElementId> duplicateOperationsChildElementsId = childrenElements(duplicateOperations);
+            ElementId electrodeId = SearchElectrode(workingDocId, "Electrode");
+            List<ElementId> ShapesList = AddShapeToList(duplicateOperationsChildElementsId, electrodeId);
+
+            // Mapper les électrodes par volume
+            Dictionary<string, ElementId> electrodeMapping = new Dictionary<string, ElementId>();
+            
+            if (ShapesList != null)
+            {
+                List<(Element Elem, ElementId Id)> allElements = new List<(Element, ElementId)>();
+                ElementId sansGapId = ElementId.Empty;
+                
+                foreach (var shapeId in ShapesList)
+                {
+                    string friendlyName = TSH.Elements.GetFriendlyName(shapeId);
+                    
+                    if (friendlyName == "Electrode")
+                    {
+                        sansGapId = shapeId;
+                    }
+                    else
+                    {
+                        Element elem = new Element(shapeId);
+                        if (elem.IsShape && elem.VolumeMm3.HasValue)
+                        {
+                            allElements.Add((elem, shapeId));
+                        }
+                    }
+                }
+                
+                // Trier par volume
+                var sortedElectrodes = allElements.OrderBy(el => el.Elem.VolumeMm3).ToList();
+                
+                // Mapper selon le nombre d'électrodes dupliquées
+                int index = 0;
+                foreach (var (name, originalId) in electrodesToExport)
+                {
+                    if (name == "Sans GAP")
+                    {
+                        electrodeMapping[name] = sansGapId;
+                    }
+                    else if (index < sortedElectrodes.Count)
+                    {
+                        electrodeMapping[name] = sortedElectrodes[index].Id;
+                        index++;
+                    }
+                }
+            }
+
+            // EXPORTER chaque électrode avec la représentation détaillée
+            foreach (var (name, originalId) in electrodesToExport)
+            {
+                if (!electrodeMapping.ContainsKey(name))
+                {
+                    continue;
+                }
+
                 ElementId electrodeElementId = electrodeMapping[name];
-                ElementId representationId = ElementId.Empty;
                 
                 try
                 {
-                    // ÉTAPE 1 : Créer et activer la représentation
-                    if (TSH.Application.StartModification("Création représentation", false))
+                    // Modifier la représentation pour cette électrode
+                    if (TSH.Application.StartModification($"Configuration export {name}", false))
                     {
                         try
                         {
-                            // Créer une représentation pour isoler l'électrode
-                            representationId = TSHD.Representations.CreateRepresentation(workingDocId);
-                            
-                            if (representationId.IsEmpty)
+                            // Vider la représentation détaillée (retirer tous les constituants)
+                            List<ElementId> currentConstituents = TSHD.Representations.GetRepresentationConstituents(representationId);
+                            if (currentConstituents != null)
                             {
-                                throw new Exception("La création de la représentation a échoué");
+                                foreach (var constituent in currentConstituents)
+                                {
+                                    TSHD.Representations.RemoveRepresentationConstituent(representationId, constituent);
+                                }
                             }
 
-                            // Ajouter l'électrode cochée dans la représentation
+                            // Ajouter la nouvelle électrode
                             TSHD.Representations.AddRepresentationConstituent(representationId, electrodeElementId);
 
                             // Activer la représentation
                             TSHD.Representations.SetCurrentRepresentation(representationId);
 
-                            // Terminer la modification avec succès
                             TSH.Application.EndModification(true, true);
                         }
-                        catch (Exception exRep)
+                        catch (Exception exMod)
                         {
                             TSH.Application.EndModification(false, false);
-                            throw new Exception($"Erreur lors de la création de la représentation: {exRep.Message}", exRep);
+                            throw new Exception($"Erreur configuration: {exMod.Message}", exMod);
                         }
                     }
-                    else
-                    {
-                        throw new Exception("Impossible de démarrer la modification pour créer la représentation");
-                    }
 
-                    // ÉTAPE 2 : Exporter (EN DEHORS de tout contexte de modification)
-                    try
-                    {
-                        // Construire le nom du fichier d'export
-                        string nomFichier = GenerateElectrodeName(nomElec, name);
-
-                        // Exporter au format STEP
-                        OutilsTs.Export.ExportDocId(workingDocId, cheminExportFinal, nomFichier, "step");
-                        
-                        // Exporter au format Parasolid X_T version 31
-                        OutilsTs.Export.ExportDocId(workingDocId, cheminExportFinal, nomFichier, "x_t", new Dictionary<string, string> { { "Version", "31" } });
-                    }
-                    catch (Exception exExport)
-                    {
-                        throw new Exception($"Erreur lors de l'export des fichiers: {exExport.Message}", exExport);
-                    }
-
-                    // ÉTAPE 3 : Supprimer la représentation
-                    if (!representationId.IsEmpty)
-                    {
-                        if (TSH.Application.StartModification("Suppression représentation", false))
-                        {
-                            try
-                            {
-                                // Supprimer la représentation
-                                TSH.Elements.Delete(representationId);
-                                
-                                TSH.Application.EndModification(true, true);
-                            }
-                            catch
-                            {
-                                TSH.Application.EndModification(false, false);
-                                throw;
-                            }
-                        }
-                    }
+                    // Exporter (représentation active)
+                    string nomFichier = GenerateElectrodeName(nomElec, name);
+                    OutilsTs.Export.ExportDocId(workingDocId, cheminExportFinal, nomFichier, "step");
+                    OutilsTs.Export.ExportDocId(workingDocId, cheminExportFinal, nomFichier, "x_t", 
+                        new Dictionary<string, string> { { "Version", "31" } });
 
                     exportCount++;
                 }
@@ -980,68 +944,34 @@ private void SelectFile_Click(object sender, RoutedEventArgs e)
                     errorCount++;
                     MessageBox.Show($"Erreur pour '{name}':\n{exOuter.Message}", 
                                     "Erreur d'export", MessageBoxButton.OK, MessageBoxImage.Error);
-                    
-                    // Essayer de nettoyer la représentation en cas d'erreur
-                    if (!representationId.IsEmpty)
-                    {
-                        try
-                        {
-                            if (TSH.Application.StartModification("Nettoyage représentation", false))
-                            {
-                                try
-                                {
-                                    TSH.Elements.Delete(representationId);
-                                    TSH.Application.EndModification(true, true);
-                                }
-                                catch
-                                {
-                                    TSH.Application.EndModification(false, false);
-                                }
-                            }
-                        }
-                        catch { }
-                    }
                 }
             }
         }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors de l'export: {ex.Message}", 
+                            "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
 
-        // Message récapitulatif
+        // Messages finaux
         if (exportCount > 0)
         {
-            string message = $"{exportCount} électrode(s) exportée(s) avec succès dans:\n{cheminExportFinal}";
-            if (errorCount > 0)
-            {
-                message += $"\n{errorCount} erreur(s)";
-            }
+            string message = $"{exportCount} électrode(s) exportée(s)";
+            if (errorCount > 0) message += $"\n{errorCount} erreur(s)";
+            
             MessageBox.Show(message, "Export terminé", MessageBoxButton.OK, 
                             errorCount > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
             
-            // Ouvrir le dossier d'export après que l'utilisateur a cliqué sur OK
-            try
-            {
-                System.Diagnostics.Process.Start("explorer.exe", cheminExportFinal);
-            }
-            catch (Exception exExplorer)
-            {
-                MessageBox.Show($"Impossible d'ouvrir le dossier: {exExplorer.Message}", 
-                                "Avertissement", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
+            try { System.Diagnostics.Process.Start("explorer.exe", cheminExportFinal); } catch { }
         }
         else if (errorCount > 0)
         {
-            MessageBox.Show("Aucune électrode n'a pu être exportée", "Erreur", 
-                            MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        else
-        {
-            MessageBox.Show("Aucune électrode cochée pour l'export", "Information", 
-                            MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Aucune électrode exportée", "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
     catch (Exception ex)
     {
-        MessageBox.Show($"Erreur générale lors de l'export: {ex.Message}\n\nDétails: {ex.ToString()}", 
-                        "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show($"Erreur générale: {ex.Message}", "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
     }
 }
 
