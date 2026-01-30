@@ -22,5 +22,17 @@ namespace ExportElec.Properties {
                 return defaultInstance;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string CheminExport {
+            get {
+                return ((string)(this["CheminExport"]));
+            }
+            set {
+                this["CheminExport"] = value;
+            }
+        }
     }
 }
