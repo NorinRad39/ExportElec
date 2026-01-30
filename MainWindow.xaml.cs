@@ -615,114 +615,114 @@ namespace ExportElec
                     });
                 }
 
-                // Ajouter tous les éléments à la ListBox
-                foreach (var item in items)
-                {
-                    electrodeList.Items.Add(item);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Erreur lors de la classification des électrodes: {ex.Message}",
-                                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
+    // Ajouter tous les éléments à la ListBox
+    foreach (var item in items)
+    {
+        electrodeList.Items.Add(item);
+    }
+}
+catch (Exception ex)
+{
+    MessageBox.Show($"Erreur lors de la classification des électrodes: {ex.Message}",
+                    "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+}
+}
 
-        #endregion 
+#endregion 
 
-        #region Gestion des événements boutons
+#region Gestion des événements boutons
 
-        #region Bouton Quitter
+#region Bouton Quitter
 
-        /// <summary>
-        /// Gère le clic sur le bouton Quitter : sauvegarde les paramètres et ferme l'application
-        /// </summary>
-        /// <param name="sender">Source de l'événement</param>
-        /// <param name="e">Arguments de l'événement</param>
-        private void Quit_Click(object sender, RoutedEventArgs e)
+/// <summary>
+/// Gère le clic sur le bouton Quitter : sauvegarde les paramètres et ferme l'application
+/// </summary>
+/// <param name="sender">Source de l'événement</param>
+/// <param name="e">Arguments de l'événement</param>
+private void Quit_Click(object sender, RoutedEventArgs e)
+{
+    // Sauvegarder les paramètres avant de quitter (par sécurité)
+    Properties.Settings.Default.Save();
+    
+    // Déconnecter tous les hôtes TopSolid
+    if (TopSolidHost.IsConnected)
+    {
+        TopSolidHost.Disconnect();
+    }
+    if (TopSolidDesignHost.IsConnected)
+    {
+        TopSolidDesignHost.Disconnect();
+    }
+    if (TopSolidDraftingHost.IsConnected)
+    {
+        TopSolidDraftingHost.Disconnect();
+    }
+
+    Application.Current.Shutdown();
+}
+
+#endregion
+
+#region Bouton Recharger
+
+/// <summary>
+/// Gère le clic sur le bouton Recharger : recharge le document TopSolid modifié
+/// </summary>
+/// <param name="sender">Source de l'événement</param>
+/// <param name="e">Arguments de l'événement</param>
+private void Button_Click(object sender, RoutedEventArgs e)
+{
+    try
+    {
+        // Recharger le document et mettre à jour l'interface
+        RechargerDocument();
+        
+        // Afficher un message de succès seulement si un document est ouvert
+        if (currentDoc?.DocId != null && !currentDoc.DocId.IsEmpty)
         {
-            // Sauvegarder les paramètres avant de quitter (par sécurité)
-            Properties.Settings.Default.Save();
-            
-            // Déconnecter tous les hôtes TopSolid
-            if (TopSolidHost.IsConnected)
-            {
-                TopSolidHost.Disconnect();
-            }
-            if (TopSolidDesignHost.IsConnected)
-            {
-                TopSolidDesignHost.Disconnect();
-            }
-            if (TopSolidDraftingHost.IsConnected)
-            {
-                TopSolidDraftingHost.Disconnect();
-            }
-
-            Application.Current.Shutdown();
+            MessageBox.Show("Document rechargé avec succès", "Rechargement", 
+                            MessageBoxButton.OK, MessageBoxImage.Information);
         }
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show($"Erreur lors du rechargement du document: {ex.Message}", 
+                        "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+        AfficherAucunDocumentOuvert();
+    }
+}
 
-        #endregion
+/// <summary>
+/// Recharge le document TopSolid courant et met à jour l'interface
+/// </summary>
+private void RechargerDocument()
+{
+    // Récupérer l'ID du document édité AVANT de créer l'instance
+    DocumentId editedDocId = TSH.Documents.EditedDocument;
 
-        #region Bouton Recharger
+    if (editedDocId != null && !editedDocId.IsEmpty)
+    {
+        // Le document est ouvert, créer l'instance
+        currentDoc = new Document();
+        currentDoc.DocId = editedDocId;
+        
+        DocumentNameText.Text = currentDoc.DocNomTxt;
+        DocumentNameText.Foreground = System.Windows.Media.Brushes.Black;
+        
+        // Recharger tous les éléments du formulaire
+        InitializeForm();
+    }
+    else
+    {
+        AfficherAucunDocumentOuvert();
+    }
+}
 
-        /// <summary>
-        /// Gère le clic sur le bouton Recharger : recharge le document TopSolid modifié
-        /// </summary>
-        /// <param name="sender">Source de l'événement</param>
-        /// <param name="e">Arguments de l'événement</param>
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                // Recharger le document et mettre à jour l'interface
-                RechargerDocument();
-                
-                // Afficher un message de succès seulement si un document est ouvert
-                if (currentDoc?.DocId != null && !currentDoc.DocId.IsEmpty)
-                {
-                    MessageBox.Show("Document rechargé avec succès", "Rechargement", 
-                                    MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Erreur lors du rechargement du document: {ex.Message}", 
-                                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
-                AfficherAucunDocumentOuvert();
-            }
-        }
+#endregion
 
-        /// <summary>
-        /// Recharge le document TopSolid courant et met à jour l'interface
-        /// </summary>
-        private void RechargerDocument()
-        {
-            // Récupérer l'ID du document édité AVANT de créer l'instance
-            DocumentId editedDocId = TSH.Documents.EditedDocument;
+#region Bouton Export
 
-            if (editedDocId != null && !editedDocId.IsEmpty)
-            {
-                // Le document est ouvert, créer l'instance
-                currentDoc = new Document();
-                currentDoc.DocId = editedDocId;
-                
-                DocumentNameText.Text = currentDoc.DocNomTxt;
-                DocumentNameText.Foreground = System.Windows.Media.Brushes.Black;
-                
-                // Recharger tous les éléments du formulaire
-                InitializeForm();
-            }
-            else
-            {
-                AfficherAucunDocumentOuvert();
-            }
-        }
-
-        #endregion
-
-        #region Bouton Export
-
-        /// <summary>
+/// <summary>
 /// Gère le clic sur le bouton Export : exporte les électrodes sélectionnées
 /// </summary>
 /// <param name="sender">Source de l'événement</param>
@@ -780,6 +780,21 @@ private void SelectFile_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("Impossible de créer la structure de dossiers", 
                             "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
+        // Afficher une fenêtre de validation du chemin d'export
+        MessageBoxResult validation = MessageBox.Show(
+            $"Les fichiers seront exportés dans le dossier suivant :\n\n{cheminExportFinal}\n\nVoulez-vous continuer ?",
+            "Validation du chemin d'export",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        // Si l'utilisateur annule, arrêter le processus
+        if (validation == MessageBoxResult.No)
+        {
+            MessageBox.Show("Export annulé par l'utilisateur", "Export annulé", 
+                            MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -1030,182 +1045,241 @@ private void SelectFile_Click(object sender, RoutedEventArgs e)
     }
 }
 
-        #endregion
+#endregion
 
-        #region Bouton Parcourir
+#region Bouton Parcourir
 
-        /// <summary>
-        /// Gère le clic sur le bouton Parcourir : ouvre un dialogue de sélection de dossier
-        /// </summary>
-        /// <param name="sender">Source de l'événement</param>
-        /// <param name="e">Arguments de l'événement</param>
-        private void parcourir_Click(object sender, RoutedEventArgs e)
+/// <summary>
+/// Gère le clic sur le bouton Parcourir : ouvre un dialogue de sélection de dossier
+/// </summary>
+/// <param name="sender">Source de l'événement</param>
+/// <param name="e">Arguments de l'événement</param>
+private void parcourir_Click(object sender, RoutedEventArgs e)
+{
+    using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+    {
+        dialog.Description = "Sélectionner un dossier";
+        dialog.ShowNewFolderButton = true;
+        
+        // Définir le dossier initial si un chemin existe déjà
+        if (!string.IsNullOrEmpty(chemin.Text) && System.IO.Directory.Exists(chemin.Text))
         {
-            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
-            {
-                dialog.Description = "Sélectionner un dossier";
-                dialog.ShowNewFolderButton = true;
-                
-                // Définir le dossier initial si un chemin existe déjà
-                if (!string.IsNullOrEmpty(chemin.Text) && System.IO.Directory.Exists(chemin.Text))
-                {
-                    dialog.SelectedPath = chemin.Text;
-                }
-
-                System.Windows.Forms.DialogResult result = dialog.ShowDialog();
-
-                if (result == System.Windows.Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
-                {
-                    // Convertir le chemin local en chemin réseau UNC si nécessaire
-                    string uncPath = CheminReseau.ConvertToUncPath(dialog.SelectedPath);
-                    chemin.Text = uncPath;
-                    
-                    // Sauvegarder le chemin pour la prochaine utilisation
-                    Properties.Settings.Default.CheminExport = uncPath;
-                    Properties.Settings.Default.Save();
-                }
-            }
+            dialog.SelectedPath = chemin.Text;
         }
 
-        #endregion
+        System.Windows.Forms.DialogResult result = dialog.ShowDialog();
 
-        #endregion
-
-        #region Méthodes utilitaires
-
-        /// <summary>
-        /// Récupère la valeur textuelle d'un paramètre du document par son nom
-        /// </summary>
-        /// <param name="Doc">Document TopSolid</param>
-        /// <param name="parameterName">Nom du paramètre à rechercher</param>
-        /// <returns>Valeur du paramètre ou null si non trouvé</returns>
-        private string GetParameterValue(Document Doc, string parameterName)
+        if (result == System.Windows.Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
         {
-            if (Doc == null || Doc.DocId == null || Doc.DocParameters == null)
-            {
-                return null;
-            }
-
-            foreach (var param in Doc.DocParameters)
-            {
-                string paramName = TSH.Elements.GetFriendlyName(param);
-                
-                if (paramName == parameterName)
-                {
-                    // Récupérer la valeur du paramètre (texte)
-                    string value = TSH.Parameters.GetTextValue(param);
-                    return value;
-                }
-            }
+            // Convertir le chemin local en chemin réseau UNC si nécessaire
+            string uncPath = CheminReseau.ConvertToUncPath(dialog.SelectedPath);
+            chemin.Text = uncPath;
             
+            // Sauvegarder le chemin pour la prochaine utilisation
+            Properties.Settings.Default.CheminExport = uncPath;
+            Properties.Settings.Default.Save();
+        }
+    }
+}
+
+#endregion
+
+#endregion
+
+#region Méthodes utilitaires
+
+/// <summary>
+/// Récupère la valeur textuelle d'un paramètre du document par son nom
+/// </summary>
+/// <param name="Doc">Document TopSolid</param>
+/// <param name="parameterName">Nom du paramètre à rechercher</param>
+/// <returns>Valeur du paramètre ou null si non trouvé</returns>
+private string GetParameterValue(Document Doc, string parameterName)
+{
+    if (Doc == null || Doc.DocId == null || Doc.DocParameters == null)
+    {
+        return null;
+    }
+
+    foreach (var param in Doc.DocParameters)
+    {
+        string paramName = TSH.Elements.GetFriendlyName(param);
+        
+        if (paramName == parameterName)
+        {
+            // Récupérer la valeur du paramètre (texte)
+            string value = TSH.Parameters.GetTextValue(param);
+            return value;
+        }
+    }
+    
+    return null;
+}
+
+/// <summary>
+/// Génère le nom de fichier d'export pour une électrode selon son type et gap
+/// </summary>
+/// <param name="nomElec">Nom de base de l'électrode</param>
+/// <param name="itemName">Nom de l'item contenant le type et le gap (ex: "Ebauche: 0.5 mm")</param>
+/// <returns>Nom de fichier formaté (ex: "E101Eb-G05")</returns>
+private string GenerateElectrodeName(string nomElec, string itemName)
+{
+    // itemName peut être par exemple : "Ebauche: 0.5 mm", "Demi finition: 0.3 mm", "Finition: 0.1 mm", "Sans GAP"
+    
+    if (itemName == "Sans GAP")
+    {
+        return $"{nomElec}-Sans-GAP";
+    }
+
+    // Séparer le type et la valeur du gap
+    string[] parts = itemName.Split(':');
+    if (parts.Length != 2)
+    {
+        return nomElec; // Fallback
+    }
+
+    string type = parts[0].Trim(); // "Ebauche" ou "Demi finition" ou "Finition"
+    string gapValue = parts[1].Trim().Replace(" mm", "").Replace(".", "").Replace(",", ""); // "0,5 mm" -> "05"
+    
+    // Définir l'abréviation du type
+    string typeAbbr;
+    if (type == "Ebauche")
+    {
+        typeAbbr = "Eb";
+    }
+    else if (type == "Demi finition")
+    {
+        typeAbbr = "DemiFini";
+    }
+    else if (type == "Finition")
+    {
+        typeAbbr = "Fini";
+    }
+    else
+    {
+        typeAbbr = type.Substring(0, 2); // Fallback: prendre les 2 premières lettres
+    }
+    
+    // Construire le nom : "E101Eb-G05"
+    return $"{nomElec}{typeAbbr}-G{gapValue}";
+}
+
+/// <summary>
+/// Construit le chemin d'export complet avec la structure de dossiers hiérarchique
+/// </summary>
+/// <param name="baseExportPath">Chemin de base de l'export</param>
+/// <param name="nomDocu">Nom du document au format "E01 Ind F test"</param>
+/// <param name="designation">Désignation du projet</param>
+/// <returns>Chemin complet créé ou null en cas d'erreur</returns>
+private string BuildExportPath(string baseExportPath, string nomDocu, string designation)
+{
+    try
+    {
+        // Parser Nom_docu pour extraire les différentes parties
+        // Formats attendus : 
+        // - "E01 Ind F test" -> numero="E01", indice="Ind F", projet="test"
+        // - "E06 et E03 Ind A 2143" -> numero="E06 et E03", indice="Ind A", projet="2143"
+        // - "E01 Ind 2143" -> numero="E01", indice="Ind", projet="2143"
+        
+        string[] parts = nomDocu.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        
+        if (parts.Length < 3)
+        {
+            MessageBox.Show($"Le format du paramètre 'Nom_docu' est invalide.\nValeur: {nomDocu}\nFormat attendu: 'E01 Ind F test', 'E06 et E03 Ind A 2143' ou 'E01 Ind 2143'", 
+                            "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
             return null;
         }
 
-        /// <summary>
-        /// Génère le nom de fichier d'export pour une électrode selon son type et gap
-        /// </summary>
-        /// <param name="nomElec">Nom de base de l'électrode</param>
-        /// <param name="itemName">Nom de l'item contenant le type et le gap (ex: "Ebauche: 0.5 mm")</param>
-        /// <returns>Nom de fichier formaté (ex: "E101Eb-G05")</returns>
-        private string GenerateElectrodeName(string nomElec, string itemName)
+        // Trouver l'index du mot "Ind" (ou "IND", insensible à la casse)
+        int indIndex = -1;
+        for (int i = 0; i < parts.Length; i++)
         {
-            // itemName peut être par exemple : "Ebauche: 0.5 mm", "Demi finition: 0.3 mm", "Finition: 0.1 mm", "Sans GAP"
-    
-            if (itemName == "Sans GAP")
+            if (parts[i].Equals("Ind", StringComparison.OrdinalIgnoreCase))
             {
-                return $"{nomElec}-Sans-GAP";
+                indIndex = i;
+                break;
             }
+        }
 
-            // Séparer le type et la valeur du gap
-            string[] parts = itemName.Split(':');
-            if (parts.Length != 2)
-            {
-                return nomElec; // Fallback
-            }
+        if (indIndex == -1 || indIndex == 0 || indIndex >= parts.Length - 1)
+        {
+            MessageBox.Show($"Le format du paramètre 'Nom_docu' est invalide.\nValeur: {nomDocu}\n'Ind' non trouvé ou mal positionné.\nFormat attendu: 'E01 Ind F test', 'E06 et E03 Ind A 2143' ou 'E01 Ind 2143'", 
+                            "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return null;
+        }
 
-            string type = parts[0].Trim(); // "Ebauche" ou "Demi finition" ou "Finition"
-            string gapValue = parts[1].Trim().Replace(" mm", "").Replace(".", "").Replace(",", ""); // "0,5 mm" -> "05"
-    
-            // Définir l'abréviation du type
-            string typeAbbr;
-            if (type == "Ebauche")
+        // Extraire les parties du nom du document
+        // Tout avant "Ind" = numéro(s)
+        string numero = string.Join(" ", parts, 0, indIndex);
+        
+        string indice;
+        int projetStartIndex;
+        
+        // Vérifier si le mot après "Ind" est un numéro (commence par un chiffre) ou une lettre (indice)
+        if (indIndex + 1 < parts.Length)
+        {
+            string nextPart = parts[indIndex + 1];
+            
+            // Si le prochain mot commence par un chiffre, c'est directement le projet (pas d'indice lettre)
+            if (char.IsDigit(nextPart[0]))
             {
-                typeAbbr = "Eb";
-            }
-            else if (type == "Demi finition")
-            {
-                typeAbbr = "DemiFini";
-            }
-            else if (type == "Finition")
-            {
-                typeAbbr = "Fini";
+                // Cas: "E01 Ind 2143" -> indice = "Ind", projet = "2143"
+                indice = parts[indIndex];
+                projetStartIndex = indIndex + 1;
             }
             else
             {
-                typeAbbr = type.Substring(0, 2); // Fallback: prendre les 2 premières lettres
+                // Cas: "E01 Ind F test" ou "E06 et E03 Ind A 2143" -> indice = "Ind F" ou "Ind A"
+                indice = $"{parts[indIndex]} {parts[indIndex + 1]}";
+                projetStartIndex = indIndex + 2;
             }
-            
-            // Construire le nom : "E101Eb-G05"
-            return $"{nomElec}{typeAbbr}-G{gapValue}";
         }
-
-        /// <summary>
-        /// Construit le chemin d'export complet avec la structure de dossiers hiérarchique
-        /// </summary>
-        /// <param name="baseExportPath">Chemin de base de l'export</param>
-        /// <param name="nomDocu">Nom du document au format "E01 Ind F test"</param>
-        /// <param name="designation">Désignation du projet</param>
-        /// <returns>Chemin complet créé ou null en cas d'erreur</returns>
-        private string BuildExportPath(string baseExportPath, string nomDocu, string designation)
+        else
         {
-            try
-            {
-                // Parser Nom_docu pour extraire les différentes parties
-                // Format attendu : "E01 Ind F test" -> numero="E01", indice="Ind F", projet="test"
-                
-                string[] parts = nomDocu.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                
-                if (parts.Length < 4)
-                {
-                    MessageBox.Show($"Le format du paramètre 'Nom_docu' est invalide.\nValeur: {nomDocu}\nFormat attendu: 'E01 Ind F test'", 
-                                    "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return null;
-                }
+            MessageBox.Show($"Le format du paramètre 'Nom_docu' est invalide.\nValeur: {nomDocu}\nAucun projet trouvé après 'Ind'.\nFormat attendu: 'E01 Ind F test', 'E06 et E03 Ind A 2143' ou 'E01 Ind 2143'", 
+                            "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return null;
+        }
+        
+        // Tout après l'indice = projet
+        if (projetStartIndex >= parts.Length)
+        {
+            MessageBox.Show($"Le format du paramètre 'Nom_docu' est invalide.\nValeur: {nomDocu}\nAucun projet trouvé.\nFormat attendu: 'E01 Ind F test', 'E06 et E03 Ind A 2143' ou 'E01 Ind 2143'", 
+                            "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return null;
+        }
+        
+        string projet = string.Join(" ", parts, projetStartIndex, parts.Length - projetStartIndex);
 
-                // Extraire les parties du nom du document
-                string numero = parts[0]; // "E01"
-                string indice = $"{parts[1]} {parts[2]}"; // "Ind F"
-                string projet = parts[3]; // "test"
+        // Construire la structure de dossiers
+        // {baseExportPath}\{projet}\{numero} - {designation}\{indice}\Electrode\Electrode parallélisée
 
-                // Construire la structure de dossiers hiérarchique
-                // {baseExportPath}\{projet}\{numero} - {designation}\{indice}\Electrode\Electrode parallélisée
-                
-                string cheminFinal = System.IO.Path.Combine(
-                    baseExportPath,
-                    projet,
-                    $"{numero} - {designation}",
-                    indice,
-                    "Electrode",
-                    "Electrode parallélisée"
-                );
+        string cheminFinal = System.IO.Path.Combine(
+            baseExportPath,
+            projet,
+            $"{numero} - {designation}",
+            indice,
+            "Electrode",
+            "Electrode parallélisée"
+        );
 
-                // Créer tous les dossiers nécessaires s'ils n'existent pas
-                if (!System.IO.Directory.Exists(cheminFinal))
-                {
-                    System.IO.Directory.CreateDirectory(cheminFinal);
-                }
-
-                return cheminFinal;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Erreur lors de la création de la structure de dossiers: {ex.Message}", 
-                                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
-                return null;
-            }
+        // Créer tous les dossiers nécessaires s'ils n'existent pas
+        if (!System.IO.Directory.Exists(cheminFinal))
+        {
+            System.IO.Directory.CreateDirectory(cheminFinal);
         }
 
-        #endregion
+        return cheminFinal;
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show($"Erreur lors de la création de la structure de dossiers: {ex.Message}", 
+                        "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+        return null;
+    }
+}
+
+#endregion
     }
 
     #region Classes auxiliaires
