@@ -53,24 +53,62 @@ namespace ExportElec
         /// </summary>
         public MainWindow()
         {
-            // Pour capturer plus de détails, ajoutez ceci dans votre code
-            
+            try
+            {
                 InitializeComponent();
-           
-            
 
-            // Connexion à TopSolid
-            startConnect = new StartConnect();
-            startConnect.ConnectionTopsolid();
-            
-            // Restaurer le chemin d'export sauvegardé
-            LoadSavedPath();
-            
-            // Initialisation du formulaire avec le document courant
-            InitializeForm();
+                // Restaurer le chemin d'export sauvegardé (peut être fait avant la connexion)
+                LoadSavedPath();
 
-            // Récupérer le bouton Export depuis le XAML
-            SelectFile = this.FindName("SelectFile") as Button;
+                // Récupérer le bouton Export depuis le XAML
+                SelectFile = this.FindName("SelectFile") as Button;
+
+                // Connexion à TopSolid avec gestion d'erreur
+                try
+                {
+                    startConnect = new StartConnect();
+                    startConnect.ConnectionTopsolid();
+                }
+                catch (Exception exConnect)
+                {
+                    MessageBox.Show(
+                        $"Impossible de se connecter à TopSolid.\n\n" +
+                        $"Erreur: {exConnect.Message}\n\n" +
+                        $"Assurez-vous que TopSolid est démarré avant de lancer cette application.",
+                        "Erreur de connexion TopSolid",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+
+                    // Afficher l'interface en mode "Aucun document"
+                    AfficherAucunDocumentOuvert();
+                    return;
+                }
+
+                // Initialisation du formulaire avec le document courant
+                InitializeForm();
+            }
+            catch (Exception ex)
+            {
+                // Capturer toute exception non gérée dans le constructeur
+                MessageBox.Show(
+                    $"Erreur critique lors de l'initialisation de l'application:\n\n" +
+                    $"Message: {ex.Message}\n\n" +
+                    $"Type: {ex.GetType().Name}\n\n" +
+                    $"StackTrace:\n{ex.StackTrace}",
+                    "Erreur critique",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                // Afficher l'interface en mode dégradé
+                try
+                {
+                    AfficherAucunDocumentOuvert();
+                }
+                catch
+                {
+                    // Si même l'affichage du message échoue, ne rien faire
+                }
+            }
         }
 
         #endregion
@@ -628,18 +666,40 @@ catch (Exception ex)
 }
 }
 
-#endregion 
+        #endregion
 
-#region Gestion des événements boutons
+        #region Etape 10 : Sauvegarde du document, mise au coffre et validation revision
+        private void Sauvegarde(DocumentId documentId)
+        {
+            try
+            {
+                if (!documentId.IsEmpty)
+                TSH.Documents.Save(documentId);
+                PdmObjectId documentPdmId = TSH.Documents.GetPdmObject(documentId);
+                TSH.Pdm.CheckIn(documentPdmId, true);
+                PdmLifeCycleMainState validate = PdmLifeCycleMainState.Validated;
+                TSH.Pdm.SetLifeCycleMainState(documentPdmId, validate);
+            }
+            catch (Exception ex)
+            {
+                TSH.Application.EndModification(false, false);
+                MessageBox.Show($"Erreur lors de la sauvegarde du document: {ex.Message}",
+                                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        #endregion
 
-#region Bouton Quitter
 
-/// <summary>
-/// Gère le clic sur le bouton Quitter : sauvegarde les paramètres et ferme l'application
-/// </summary>
-/// <param name="sender">Source de l'événement</param>
-/// <param name="e">Arguments de l'événement</param>
-private void Quit_Click(object sender, RoutedEventArgs e)
+        #region Gestion des événements boutons
+
+        #region Bouton Quitter
+
+        /// <summary>
+        /// Gère le clic sur le bouton Quitter : sauvegarde les paramètres et ferme l'application
+        /// </summary>
+        /// <param name="sender">Source de l'événement</param>
+        /// <param name="e">Arguments de l'événement</param>
+        private void Quit_Click(object sender, RoutedEventArgs e)
 {
     // Sauvegarder les paramètres avant de quitter (par sécurité)
     Properties.Settings.Default.Save();
@@ -973,6 +1033,8 @@ private void SelectFile_Click(object sender, RoutedEventArgs args)
     {
         MessageBox.Show($"Erreur générale: {ex.Message}", "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
     }
+            
+            Sauvegarde(currentDoc.DocId);
 }
 
 #endregion
