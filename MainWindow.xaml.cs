@@ -799,6 +799,35 @@ private void SelectFile_Click(object sender, RoutedEventArgs args)
             return;
         }
 
+        // Application des héritages de dérivation avec les paramètres spécifiés
+        TSHD.Tools.SetDerivationInheritances(
+            currentDoc.DocId,                  // DocumentId
+            false,                        // Nom
+            false,                        // Description
+            false,                        // Code
+            false,                        // Numéro de pièce
+            false,                        // Numéro de pièce complémentaire
+            false,                        // Fabricant
+            false,                        // Numéro de pièce du fabricant
+            false,                        // Commentaire
+            new List<ElementId>(),        // Autres paramètres du système
+            false,                        // Paramètres non systèmes
+            true,                         // Points
+            true,                         // Axes
+            true,                         // Plans
+            true,                         // Cadres
+            true,                         // Esquisses
+            true,                         // Formes
+            true,                         // Publications
+            true,                         // Fonctions
+            true,                         // Symétries
+            true,                         // Non sectionnabilité
+            false,                        // Représentations
+            false,                        // Ensembles
+            true                        // Caméras
+            );
+                    
+
         // Récupérer les paramètres
         string nomDocu = GetParameterValue(currentDoc, "Nom_docu");
         string designation = GetParameterValue(currentDoc, "Designation");
