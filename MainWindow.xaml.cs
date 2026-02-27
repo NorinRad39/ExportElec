@@ -5,6 +5,7 @@ using System.Configuration;
 using System.Data;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -866,6 +867,42 @@ private void SelectFile_Click(object sender, RoutedEventArgs args)
         DocumentId workingDocId = currentDoc.DocId;
         ElementId representationId = ElementId.Empty;
 
+                bool nom, description, code, partNumber;
+                bool complementaryPartNumber, manufacturer, manufacturerPartNumber;
+                bool comment, nonSystemParameters;
+                bool points, axes, planes, frames, sketches, shapes;
+                bool publishings, functions, symmetries, unsectionabilities;
+                bool representations, sets, cameras;
+
+                List<ElementId> otherSystemParameters;
+
+                TSHD.Tools.GetDerivationInheritances(currentDoc.DocId,
+                    out nom,
+                    out description,
+                    out code,
+                    out partNumber,
+                    out complementaryPartNumber,
+                    out manufacturer,
+                    out manufacturerPartNumber,
+                    out comment,
+                    out otherSystemParameters,
+                    out nonSystemParameters,
+                    out points,
+                    out axes,
+                    out planes,
+                    out frames,
+                    out sketches,
+                    out shapes,
+                    out publishings,
+                    out functions,
+                    out symmetries,
+                    out unsectionabilities,
+                    out representations,
+                    out sets,
+                    out cameras
+                );
+
+
         try
         {
             // Rendre le document dirty et récupérer la représentation détaillée
@@ -888,7 +925,7 @@ private void SelectFile_Click(object sender, RoutedEventArgs args)
                         true,                        // Fabricant
                         true,                        // Numéro de pièce du fabricant
                         true,                        // Commentaire
-                        new List<ElementId>(),        // Autres paramètres du système
+                        otherSystemParameters,        // Autres paramètres du système
                         true,                        // Paramètres non systèmes
                         true,                         // Points
                         true,                         // Axes
@@ -1119,24 +1156,24 @@ private void parcourir_Click(object sender, RoutedEventArgs e)
 /// <returns>Valeur du paramètre ou null si non trouvé</returns>
 private string GetParameterValue(Document Doc, string parameterName)
 {
-    if (Doc == null || Doc.DocId == null || Doc.DocParameters == null)
-    {
-        return null;
-    }
-
-    foreach (var param in Doc.DocParameters)
-    {
-        string paramName = TSH.Elements.GetFriendlyName(param);
-        
-        if (paramName == parameterName)
+        if (Doc == null || Doc.DocId == null || Doc.DocParameters == null)
         {
-            // Récupérer la valeur du paramètre (texte)
-            string value = TSH.Parameters.GetTextValue(param);
-            return value;
+            return null;
         }
-    }
+
+        foreach (var param in Doc.DocParameters)
+        {
+            string paramName = TSH.Elements.GetFriendlyName(param);
+        
+            if (paramName == parameterName)
+            {
+                // Récupérer la valeur du paramètre (texte)
+                string value = TSH.Parameters.GetTextValue(param);
+                return value;
+            }
+        }
     
-    return null;
+        return null;
 }
 
 /// <summary>
@@ -1300,7 +1337,7 @@ private string BuildExportPath(string baseExportPath, string nomDocu, string des
                         "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
         return null;
     }
-}
+    }
 
 #endregion
     }
@@ -1329,5 +1366,5 @@ private string BuildExportPath(string baseExportPath, string nomDocu, string des
     }
 
     #endregion
-}
+    }
 
