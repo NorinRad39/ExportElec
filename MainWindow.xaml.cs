@@ -40,11 +40,6 @@ namespace ExportElec
         /// </summary>
         private StartConnect startConnect;
 
-        /// <summary>
-        /// Bouton Export
-        /// </summary>
-        private Button SelectFile;
-
         #endregion
 
         #region Constructeur
@@ -60,9 +55,6 @@ namespace ExportElec
 
                 // Restaurer le chemin d'export sauvegardé (peut être fait avant la connexion)
                 LoadSavedPath();
-
-                // Récupérer le bouton Export depuis le XAML
-                SelectFile = this.FindName("SelectFile") as Button;
 
                 // Connexion à TopSolid avec gestion d'erreur
                 try
@@ -229,10 +221,10 @@ namespace ExportElec
         /// <param name="activer">True pour activer, False pour désactiver</param>
         private void ActiverBoutonExport(bool activer)
         {
-            // Vérifier si le bouton existe dans le XAML (nom probable: SelectFile ou btnExport)
-            if (SelectFile != null)
+            // "exporter" est le champ généré à partir du x:Name du bouton dans MainWindow.xaml
+            if (exporter != null)
             {
-                SelectFile.IsEnabled = activer;
+                exporter.IsEnabled = activer;
             }
         }
 
