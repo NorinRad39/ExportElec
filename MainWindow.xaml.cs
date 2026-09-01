@@ -113,6 +113,16 @@ namespace ExportElec
         /// </summary>
         private void LoadSavedPath()
         {
+            // Les réglages utilisateur sont stockés par version d'assembly : chaque livraison
+            // incrémente AssemblyVersion et repartirait donc d'un chemin vide. Upgrade() reprend
+            // les valeurs de la version précédente, une seule fois.
+            if (Properties.Settings.Default.UpgradeRequired)
+            {
+                Properties.Settings.Default.Upgrade();
+                Properties.Settings.Default.UpgradeRequired = false;
+                Properties.Settings.Default.Save();
+            }
+
             if (!string.IsNullOrEmpty(Properties.Settings.Default.CheminExport))
             {
                 chemin.Text = Properties.Settings.Default.CheminExport;
@@ -785,10 +795,25 @@ private void SelectFile_Click(object sender, RoutedEventArgs args)
     try
     {
         // Vérifications initiales...
-        if (currentDoc?.DocId == null || string.IsNullOrWhiteSpace(chemin.Text))
+        if (currentDoc?.DocId == null)
         {
             MessageBox.Show("Vérifiez qu'un document est ouvert et qu'un chemin est sélectionné", 
                             "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        // Un chemin relatif est résolu par TopSolid depuis SON répertoire de travail, pas
+        // celui de cette application : les dossiers seraient créés ici et l'export partirait
+        // ailleurs. Exiger un chemin absolu existant est la seule vérification qui tienne.
+        string baseExportPath = chemin.Text?.Trim();
+        if (string.IsNullOrWhiteSpace(baseExportPath) ||
+            !System.IO.Path.IsPathRooted(baseExportPath) ||
+            !System.IO.Directory.Exists(baseExportPath))
+        {
+            MessageBox.Show(
+                "Sélectionnez un dossier d'export existant avec le bouton Parcourir.\n\n" +
+                $"Chemin actuel : {(string.IsNullOrWhiteSpace(baseExportPath) ? "(vide)" : baseExportPath)}",
+                "Chemin d'export invalide", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -808,7 +833,7 @@ private void SelectFile_Click(object sender, RoutedEventArgs args)
         }
 
         // Construire le chemin d'export
-        string cheminExportFinal = BuildExportPath(chemin.Text, nomDocu, designation);
+        string cheminExportFinal = BuildExportPath(baseExportPath, nomDocu, designation);
         if (string.IsNullOrEmpty(cheminExportFinal))
         {
             return;
@@ -1018,6 +1043,7 @@ private void SelectFile_Click(object sender, RoutedEventArgs args)
                 }
 
                 ElementId electrodeElementId = electrodeMapping[name];
+                string nomFichier = GenerateElectrodeName(nomElec, name);
                 
                 try
                 {
@@ -1052,18 +1078,20 @@ private void SelectFile_Click(object sender, RoutedEventArgs args)
                     }
 
                     // Exporter (représentation active)
-                    string nomFichier = GenerateElectrodeName(nomElec, name);
                     OutilsTs.Export.ExportDocId(workingDocId, cheminExportFinal, nomFichier, "step");
                     OutilsTs.Export.ExportDocId(workingDocId, cheminExportFinal, nomFichier, "x_t", 
-                        new Dictionary<string, string> { { "Version", "31" } });
+                        new Dictionary<string, string> { { "SAVE_VERSION", "310" } });
 
                     exportCount++;
                 }
                 catch (Exception exOuter)
                 {
                     errorCount++;
-                    MessageBox.Show($"Erreur pour '{name}':\n{exOuter.Message}", 
-                                    "Erreur d'export", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(
+                        $"Erreur pour '{name}':\n{exOuter.Message}\n\n" +
+                        $"Cible : {System.IO.Path.Combine(cheminExportFinal, nomFichier)}\n\n" +
+                        DescribeExporterOptions("x_t"),
+                        "Erreur d'export", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
@@ -1139,6 +1167,44 @@ private void parcourir_Click(object sender, RoutedEventArgs e)
 #endregion
 
 #region Méthodes utilitaires
+
+/// <summary>
+/// Liste les options reellement exposees par l'exporteur associe a une extension.
+/// Les cles d'options TopSolid varient d'une version a l'autre et OutilsTs ignore
+/// silencieusement une cle inconnue : ce descriptif sert a diagnostiquer un export refuse.
+/// </summary>
+/// <param name="extension">Extension geree par l'exporteur (ex: "x_t").</param>
+/// <returns>Texte listant les couples cle/valeur, ou la raison de l'echec du diagnostic.</returns>
+private static string DescribeExporterOptions(string extension)
+{
+    try
+    {
+        for (int i = 0; i < TSH.Application.ExporterCount; i++)
+        {
+            TSH.Application.GetExporterFileType(i, out string fileTypeName, out string[] fileExtensions);
+
+            if (fileExtensions == null ||
+                !fileExtensions.Any(ext => ext.TrimStart('.').Equals(extension, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            List<KeyValue> options = TSH.Application.GetExporterOptions(i);
+
+            string detail = (options == null || options.Count == 0)
+                ? "(aucune option)"
+                : string.Join("\n  ", options.Select(o => $"{o.Key} = {o.Value}"));
+
+            return $"Exporteur '{fileTypeName}' (.{extension}) - options disponibles :\n  {detail}";
+        }
+
+        return $"Aucun exporteur trouve pour l'extension '.{extension}'.";
+    }
+    catch (Exception ex)
+    {
+        return $"Diagnostic des options '.{extension}' impossible : {ex.Message}";
+    }
+}
 
 /// <summary>
 /// Récupère la valeur textuelle d'un paramètre du document par son nom

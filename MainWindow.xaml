@@ -52,7 +52,23 @@
                             </TransformGroup>
                         </Button.RenderTransform>
                     </Button>
-                    <TextBox x:Name="chemin" TextWrapping="Wrap" Text="Chemin d'accés dossier" Margin="61,5,0,5" HorizontalAlignment="Left" Width="304" Background="#FF969696"/>
+                    <TextBox x:Name="chemin" TextWrapping="Wrap" Margin="61,5,0,5" HorizontalAlignment="Left" Width="304" Background="#FF969696"/>
+                    <!-- Invite affichée par-dessus le champ vide : elle ne doit surtout pas être
+                         la valeur de Text, sinon elle part telle quelle comme chemin d'export. -->
+                    <TextBlock x:Name="cheminInvite" Text="Chemin d'accès dossier" IsHitTestVisible="False"
+                               Margin="66,5,0,5" HorizontalAlignment="Left" VerticalAlignment="Center"
+                               Foreground="#FF3F3F3F" FontStyle="Italic">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=chemin}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </Grid>
             </StackPanel>
         </Grid>
