@@ -55,8 +55,8 @@
     <Reference Include="Microsoft.Web.WebView2.Wpf, Version=1.0.4191.47, Culture=neutral, PublicKeyToken=2a8ab48044d2601e, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.Web.WebView2.1.0.4191.47\lib\net462\Microsoft.Web.WebView2.Wpf.dll</HintPath>
     </Reference>
-    <Reference Include="OutilsTs, Version=2.0.3.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>packages\OutilsTs.2.0.3\lib\net481\OutilsTs.dll</HintPath>
+    <Reference Include="OutilsTs, Version=2.0.5.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>packages\OutilsTs.2.0.5\lib\net481\OutilsTs.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
