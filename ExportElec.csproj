@@ -90,9 +90,8 @@
     <Reference Include="TopSolid.Kernel.Automating, Version=7.20.400.121, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\TopSolid.Kernel.Automating.7.20.400.121\lib\net48\TopSolid.Kernel.Automating.dll</HintPath>
     </Reference>
-    <Reference Include="TopSolid.Kernel.SX.NetStandard, Version=7.19.400.140, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Program Files\TOPSOLID\TopSolid 7.19\bin\TopSolid.Kernel.SX.NetStandard.dll</HintPath>
+    <Reference Include="TopSolid.Kernel.SX.NetStandard, Version=7.20.400.121, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\TopSolid.Kernel.Automating.7.20.400.121\build\TopSolid.Kernel.SX.NetStandard.dll</HintPath>
     </Reference>
     <Reference Include="TopSolid.Pdm.Explorer.Automating, Version=7.20.400.121, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\TopSolid.Pdm.Explorer.Automating.7.20.400.121\lib\net48\TopSolid.Pdm.Explorer.Automating.dll</HintPath>
