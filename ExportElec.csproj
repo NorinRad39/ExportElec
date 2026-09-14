@@ -165,4 +165,21 @@
   </Target>
   <Import Project="packages\TopSolid.Pdm.Explorer.Automating.7.20.400.121\build\TopSolid.Pdm.Explorer.Automating.targets" Condition="Exists('packages\TopSolid.Pdm.Explorer.Automating.7.20.400.121\build\TopSolid.Pdm.Explorer.Automating.targets')" />
   <Import Project="packages\Microsoft.Web.WebView2.1.0.4191.47\build\Microsoft.Web.WebView2.targets" Condition="Exists('packages\Microsoft.Web.WebView2.1.0.4191.47\build\Microsoft.Web.WebView2.targets')" />
+  <!--
+    TopSolid.Kernel.Automating.targets et TopSolid.Pdm.Explorer.Automating.targets (importes
+    ci-dessus) ajoutent chacun un item None identique, avec le meme Link
+    "TopSolid.Kernel.SX.NetStandard.dll", pointant vers deux fichiers source differents (un par
+    package). Cette collision sur un seul et meme chemin de sortie a de bonnes chances d'etre ce qui
+    fait planter le chargement du projet dans le serveur de langage C# de VS Code (NullReferenceException
+    a l'ouverture, alors que la compilation en ligne de commande reussit sans avertissement). On ne
+    garde qu'un seul de ces deux items.
+  -->
+  <ItemGroup>
+    <None Remove="packages\TopSolid.Kernel.Automating.7.20.400.121\build\TopSolid.Kernel.SX.NetStandard.dll" />
+    <None Remove="packages\TopSolid.Pdm.Explorer.Automating.7.20.400.121\build\TopSolid.Kernel.SX.NetStandard.dll" />
+    <None Include="packages\TopSolid.Kernel.Automating.7.20.400.121\build\TopSolid.Kernel.SX.NetStandard.dll">
+      <Link>TopSolid.Kernel.SX.NetStandard.dll</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
