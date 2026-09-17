@@ -182,4 +182,8 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="TopSolid.Cad.Design.Automating" Version="7.20.400.121" />
+    <PackageReference Include="TopSolid.Cad.Design.Automating" Version="7.20.400.121" />
+  </ItemGroup>
 </Project>
